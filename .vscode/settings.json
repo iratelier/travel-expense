@@ -1,0 +1,41 @@
+// settins.json 파일은 프로젝트 루트 디렉토리에 .vscode 폴더를 생성하고 그 안에 settings.json 파일을 생성하여 작성합니다.
+{
+  // "editor.wordWrap": "off",
+  // "editor.wordWrap": "wordWrapColumn",
+  // "editor.wordWrapColumn": 2000,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[vue]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[scss]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+
+  "html.validate.scripts": false,
+  "liveSassCompile.settings.formats": [
+    {
+      "format": "expanded", // 기본 CSS 파일 생성
+      "extensionName": ".css",
+      "savePath": null
+    }
+  ],
+  // "liveSassCompile.settings.includeItems": ["ui/**/_assets/css/**/*.scss"],
+  "liveSassCompile.settings.generateMap": false, // .map 파일 생성 비활성화
+
+  "search.useIgnoreFiles": false,
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/CVS": false
+  },
+  "explorerExclude.backup": {}
+}

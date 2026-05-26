@@ -1,0 +1,171 @@
+$common-icons-font: "common-icons" !default;
+$common-icons-font-dir: "" !default;
+$common-icons-font-file: "#{$common-icons-font-dir}/#{$common-icons-font}" !default;
+$common-icons-font-hash: "81b61386f7cf7f35e63e254ccaa4c901" !default;
+$common-icons-font-src:
+  url("#{$common-icons-font-file}.woff2?#{$common-icons-font-hash}")
+    format("woff2"),
+  url("#{$common-icons-font-file}.woff?#{$common-icons-font-hash}")
+    format("woff") !default;
+
+@font-face {
+  font-display: block;
+  font-family: $common-icons-font;
+  src: $common-icons-font-src;
+}
+
+.ni::before,
+[class^="ni-"]::before,
+[class*=" ni-"]::before {
+  display: inline-block;
+  font-family: $common-icons-font !important;
+  font-style: normal;
+  font-weight: normal !important;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  vertical-align: -0.125em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+$common-icons-map: (
+  "add-circle-thin": "\f101",
+  "add-circle": "\f102",
+  "add-thin": "\f103",
+  "add": "\f104",
+  "alarm-thin": "\f105",
+  "alarm": "\f106",
+  "alert-fill": "\f107",
+  "alert-thin": "\f108",
+  "alert": "\f109",
+  "apps-fill": "\f10a",
+  "arrow-back-thin": "\f10b",
+  "arrow-back": "\f10c",
+  "arrow-diagonal": "\f10d",
+  "arrow-down-fill": "\f10e",
+  "arrow-down-thin": "\f10f",
+  "arrow-down": "\f110",
+  "arrow-forward-thin": "\f111",
+  "arrow-forward": "\f112",
+  "arrow-left-fill": "\f113",
+  "arrow-right-fill": "\f114",
+  "arrow-up-fill": "\f115",
+  "arrow-up-thin": "\f116",
+  "arrow-up": "\f117",
+  "autorenew-thin": "\f118",
+  "autorenew": "\f119",
+  "bookmark-fill": "\f11a",
+  "bookmark-thin": "\f11b",
+  "bookmark": "\f11c",
+  "bus": "\f11d",
+  "call": "\f11e",
+  "cancel-fill": "\f11f",
+  "cancel-thin": "\f120",
+  "cancel": "\f121",
+  "cash": "\f122",
+  "check-circle-fill": "\f123",
+  "check-circle-thin": "\f124",
+  "check-circle": "\f125",
+  "chevron-down-thin": "\f126",
+  "chevron-down": "\f127",
+  "chevron-left-double-thin": "\f128",
+  "chevron-left-double": "\f129",
+  "chevron-left-thin": "\f12a",
+  "chevron-left": "\f12b",
+  "chevron-right-double-thin": "\f12c",
+  "chevron-right-double": "\f12d",
+  "chevron-right-thin": "\f12e",
+  "chevron-right": "\f12f",
+  "chevron-up-thin": "\f130",
+  "chevron-up": "\f131",
+  "close-thin": "\f132",
+  "close": "\f133",
+  "comment": "\f134",
+  "community-fill": "\f135",
+  "company": "\f136",
+  "copy": "\f137",
+  "cs": "\f138",
+  "delete-thin": "\f139",
+  "delete": "\f13a",
+  "diary": "\f13b",
+  "done-thin": "\f13c",
+  "done": "\f13d",
+  "download-thin": "\f13e",
+  "download": "\f13f",
+  "eye-fill": "\f140",
+  "favorite-thin": "\f141",
+  "favorite": "\f142",
+  "filter": "\f143",
+  "food": "\f144",
+  "go-to-down": "\f145",
+  "go-to-left": "\f146",
+  "go-to-right": "\f147",
+  "go-to-top": "\f148",
+  "home-thin": "\f149",
+  "home": "\f14a",
+  "image-fill": "\f14b",
+  "image-thin": "\f14c",
+  "image": "\f14d",
+  "info-circle-thin": "\f14e",
+  "info-fill": "\f14f",
+  "info": "\f150",
+  "last-page-left": "\f151",
+  "last-page-right": "\f152",
+  "link": "\f153",
+  "list-board": "\f154",
+  "location": "\f155",
+  "lock": "\f156",
+  "login-thin": "\f157",
+  "login": "\f158",
+  "logout-thin": "\f159",
+  "logout": "\f15a",
+  "mail": "\f15b",
+  "menu-thin": "\f15c",
+  "menu": "\f15d",
+  "more-horizontal-thin": "\f15e",
+  "more-horizontal": "\f15f",
+  "more-vertical-thin": "\f160",
+  "more-vertical": "\f161",
+  "notice": "\f162",
+  "open-in-new-thin": "\f163",
+  "open-in-new": "\f164",
+  "quick-fill": "\f165",
+  "refresh-thin": "\f166",
+  "refresh": "\f167",
+  "remove-thin": "\f168",
+  "remove": "\f169",
+  "reply-fill": "\f16a",
+  "search-thin": "\f16b",
+  "search": "\f16c",
+  "settings-thin": "\f16d",
+  "settings": "\f16e",
+  "share-thin": "\f16f",
+  "share": "\f170",
+  "sorting": "\f171",
+  "star-fill": "\f172",
+  "star-thin": "\f173",
+  "star": "\f174",
+  "toggle-off-thin": "\f175",
+  "toggle-off": "\f176",
+  "toggle-on-thin": "\f177",
+  "toggle-on": "\f178",
+  "upload-thin": "\f179",
+  "upload": "\f17a",
+  "user-info-fill": "\f17b",
+  "user-search-fill": "\f17c",
+  "user-team": "\f17d",
+  "user-thin": "\f17e",
+  "user": "\f17f",
+  "warning-fill": "\f180",
+  "warning-thin": "\f181",
+  "warning": "\f182",
+  "write-thin": "\f183",
+  "write": "\f184",
+);
+
+@each $icon, $codepoint in $common-icons-map {
+  .ni-#{$icon}::before {
+    content: $codepoint;
+  }
+}

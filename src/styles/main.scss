@@ -1,0 +1,1553 @@
+@use "common-icons" with (
+  $common-icons-font-dir: "../assets/fonts"
+);
+
+// ============================================================================
+//   COMMON — 전역 기반
+// ============================================================================
+
+// ── 폰트 ─────────────────────────────────────────────────────────────────────
+body,
+html,
+button,
+input,
+select,
+textarea {
+  font-family:
+    "Pretendard",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  @apply font-normal;
+}
+
+// ============================================================================
+//    Color Palette
+// ============================================================================
+$color-primary: #ff4800;
+$color-primary-hover: #e64000;
+
+:root {
+  --color-primary: #{$color-primary};
+  --color-primary-hover: #{$color-primary-hover};
+}
+
+// ============================================================================
+//    MIXINS
+// ============================================================================
+@mixin dd-arrow-svg($color) {
+  background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='%23#{$color}' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M6.00015 7.58594L12.0002 13.5859L18.0002 7.58594L19.4144 9.00015L12.0002 16.4144L4.58594 9.00015L6.00015 7.58594Z' /%3E%3C/svg%3E%0A");
+}
+
+// ── 폼 믹스인 ─────────────────────────────────────────────────────────────────
+// 모든 폼 요소 공통
+@mixin form-base {
+  @apply box-border appearance-none;
+  @apply relative;
+  @apply flex flex-wrap items-center gap-1;
+  @apply w-full min-h-[32px] px-2 py-1;
+  @apply bg-white rounded-md border border-gray-300;
+  @apply cursor-pointer transition-colors;
+  @apply focus:outline-none focus:border-emerald-500 focus:ring-emerald-200 focus:ring-1 focus:ring-brand;
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-0;
+  @apply disabled:bg-gray-50 disabled:cursor-not-allowed;
+}
+
+// 텍스트 계열 (input / textarea)
+@mixin form-field {
+  @include form-base;
+  @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  @apply w-full px-2.5 py-1.5;
+  @apply text-gray-900 text-xs;
+  @apply placeholder-gray-300;
+  @apply disabled:text-gray-400 disabled:cursor-not-allowed;
+
+  // number 스피너 제거
+  &[type="number"] {
+    -moz-appearance: textfield;
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      @apply appearance-none;
+      @apply m-0;
+    }
+  }
+  // date 캘린더 아이콘 우측 끝 정렬
+  &[type="date"] {
+    @apply pr-14;
+
+    &::-webkit-calendar-picker-indicator {
+      @apply absolute right-[6px] top-1/2 transform -translate-y-1/2;
+      @apply cursor-pointer;
+      @apply opacity-45;
+      @apply hover:opacity-80;
+    }
+  }
+}
+
+// 텍스트 계열 wrap
+@mixin form-field-wrap {
+  @include form-base;
+  @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  @apply w-full px-2.5 py-1.5;
+  @apply text-gray-900 text-xs;
+  @apply placeholder-gray-300;
+  @apply disabled:text-gray-400 disabled:cursor-not-allowed;
+}
+
+// 텍스트 계열 (select)
+@mixin form--select {
+  --bs-form--select-bg-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%23374151' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+
+  @include form-base;
+  @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  @apply w-[108px] pl-2.5 pr-8 py-1.5;
+  @apply text-gray-900 text-xs;
+  @apply bg-no-repeat bg-[image:var(--bs-form--select-bg-image)];
+  background-position: right 8px center;
+  background-size: 12px 12px;
+}
+
+// 체크박스 / 라디오 전용
+@mixin form-check {
+  --bs-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='17' viewBox='0 0 16 17' fill='none'%3e%3cpath fill-rule='evenodd' clip-rule='evenodd' d='M13.6094 5.1812L5.7917 12.762L1.724 8.81756L2.65219 7.86036L5.7917 10.9047L12.6812 4.224L13.6094 5.1812Z' fill='white'/%3e%3c/svg%3e");
+
+  @include form-base;
+  @apply w-4 h-4 min-w-[16px];
+  @apply checked:bg-blue-600 checked:border-blue-600;
+  @apply bg-no-repeat bg-center bg-contain bg-[image:var(--bs-form-check-bg-image)];
+}
+
+// ── 버튼 믹스인 ────────────────────────────────────────────────────────────────
+@mixin btn-base {
+  @apply appearance-none;
+  @apply overflow-hidden whitespace-nowrap text-ellipsis;
+  @apply inline-flex items-center justify-center gap-1.5 shrink-0;
+  @apply relative;
+  @apply px-2.5 py-1.5;
+  @apply bg-white rounded-md border border-gray-200;
+  @apply text-gray-900 text-xs;
+  @apply cursor-pointer transition-all;
+
+  @apply disabled:bg-gray-50 disabled:border-gray-200 disabled:opacity-35 disabled:cursor-not-allowed;
+}
+
+// ── 기본 레이아웃 ──────────────────────────────────────────────────────────────
+body {
+  @apply bg-gray-100;
+  // @apply text-gray-900 text-xs;
+}
+
+.wrap {
+  @apply flex flex-col;
+  @apply relative overflow-hidden;
+  @apply w-full min-w-[360px] min-h-screen pt-12;
+}
+
+.main {
+  @apply flex flex-col flex-1;
+  @apply relative;
+}
+
+// ── 헤더 ─────────────────────────────────────────────────────────────────────
+.site-header {
+  @apply flex items-center;
+  @apply fixed top-0 left-0 z-[500];
+  @apply w-full px-5 py-3;
+  @apply bg-black shadow-md;
+  @apply text-white;
+}
+
+.header__logo {
+  @apply flex items-center gap-2;
+  @apply mr-auto;
+  @apply text-white text-base font-bold tracking-tight;
+
+  &-icon {
+    @apply text-white;
+  }
+}
+
+// ── NavMenu ─────────────────────────────────────────────────────────────────
+.nav-menu {
+  @apply relative;
+
+  &__trigger {
+    @apply flex items-center justify-center;
+    @apply w-8 h-8;
+    @apply bg-white/20 rounded-md border-0;
+    @apply text-white;
+    @apply cursor-pointer;
+    @apply hover:bg-white/35;
+  }
+
+  &__dropdown {
+    @apply absolute right-0 z-[300];
+    @apply w-40 py-1.5;
+    @apply bg-white rounded-xl border border-gray-100 shadow-xl;
+    top: calc(100% + 8px);
+  }
+
+  &__item {
+    @apply flex items-center gap-2.5;
+    @apply px-4 py-2;
+    @apply text-gray-700 text-xs no-underline;
+    @apply transition-colors;
+    @apply hover:bg-emerald-50 hover:text-emerald-700;
+
+    &.active {
+      @apply bg-emerald-50;
+      @apply text-emerald-700 font-semibold;
+    }
+  }
+}
+
+// ── Page Top Bar ────────────────────────────────────────────────────────────
+.page-top {
+  @apply flex flex-wrap items-center gap-3;
+  @apply fixed top-12 left-0 z-[100];
+  @apply w-full px-4 py-2;
+  @apply bg-white border-b border-gray-200;
+
+  &__title-nav {
+    @apply flex items-center gap-2;
+    @apply min-h-[30px];
+  }
+
+  &__title {
+    @apply text-gray-900 text-base font-bold;
+  }
+
+  &__nav {
+    @apply flex items-center gap-3;
+  }
+
+  &__nav-btn {
+    @apply flex items-center justify-center;
+    @apply w-6 h-6;
+    @apply bg-transparent rounded-md;
+    @apply border-0 #{!important};
+    @apply text-gray-500;
+    @apply cursor-pointer transition-colors;
+    @apply hover:bg-emerald-50 hover:text-emerald-700;
+  }
+
+  &__today-btn {
+    @apply ml-1 px-2 h-6;
+    @apply bg-white rounded-md border border-gray-200;
+    @apply text-gray-500 text-[11px] font-semibold;
+    @apply cursor-pointer transition-colors;
+    @apply hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50;
+  }
+
+  &__month--btn {
+    @apply px-1.5 py-0.5;
+    @apply bg-transparent rounded-md border-0;
+    @apply cursor-pointer;
+    @apply hover:bg-emerald-50 hover:text-emerald-700 transition-colors;
+  }
+
+  &__actions {
+    @apply flex items-center gap-1.5;
+    @apply ml-auto;
+  }
+
+  &__btn {
+    @apply h-8 px-1 py-1;
+  }
+
+  .form--select {
+    @apply w-auto h-8;
+  }
+
+  .form--field {
+    @apply w-16 h-8;
+  }
+}
+
+// ── Page Container ──────────────────────────────────────────────────────────
+.page-container {
+  @apply flex flex-col flex-1;
+  @apply overflow-hidden;
+  @apply min-h-0 pt-12;
+}
+
+// ============================================================================
+// COMPONENTS — 공유 UI 컴포넌트
+// ============================================================================
+
+// ── 유틸리티 ──────────────────────────────────────────────────────────────────
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-0;
+}
+
+// ── Section Title ───────────────────────────────────────────────────────────
+.section-title {
+  @apply flex flex-wrap gap-2 items-center;
+
+  &__label {
+    @apply flex items-center gap-2;
+    @apply text-gray-900 text-sm font-bold;
+
+    &::before {
+      @apply content-[""];
+      @apply inline-block;
+      @apply w-1 h-4;
+      @apply bg-emerald-800 rounded-sm;
+    }
+  }
+}
+
+// ── 버튼 ─────────────────────────────────────────────────────────────────────
+.btn {
+  @include btn-base;
+
+  &--primary {
+    @apply border-0;
+    @apply text-white;
+    background-color: $color-primary;
+
+    &:hover {
+      background-color: $color-primary-hover;
+    }
+  }
+
+  &--secondary {
+    @apply bg-gray-100;
+    @apply text-gray-700;
+    @apply hover:bg-gray-200;
+  }
+
+  &--edit {
+    @apply bg-white border-gray-300;
+    @apply text-blue-700;
+    @apply hover:bg-blue-100;
+  }
+
+  &--delete {
+    @apply bg-red-50;
+    @apply text-red-700;
+    @apply hover:bg-red-100;
+  }
+
+  &--add {
+    @apply px-4 py-1.5;
+    @apply bg-white;
+    @apply text-gray-800 font-bold;
+    @apply hover:bg-emerald-50;
+  }
+
+  &--confirm {
+    @apply w-5 h-5 p-0;
+    @apply text-[11px] font-bold leading-none;
+    @apply hover:bg-emerald-50 hover:border-emerald-600 hover:text-emerald-600;
+
+    &.auto-locked {
+      @apply bg-gray-200 border-gray-400;
+      @apply text-gray-600;
+      @apply hover:bg-gray-300 hover:border-gray-500 hover:text-gray-700;
+    }
+
+    &.locked {
+      @apply bg-emerald-600 border-emerald-600;
+      @apply text-white;
+      @apply hover:bg-emerald-700;
+    }
+  }
+
+  &--brk-edit {
+    @include btn-base;
+
+    @apply absolute right-1 top-1;
+    @apply w-5 h-5 p-0;
+    @apply hover:bg-emerald-50 hover:border-emerald-600 hover:text-emerald-600;
+
+    svg {
+      @apply block;
+      @apply w-3 h-3;
+    }
+  }
+
+  &--month-close {
+    @apply inline-flex items-center gap-1;
+    @apply px-3 py-1.5;
+    @apply bg-white rounded-lg border border-gray-300 shadow-sm;
+    @apply text-gray-600 text-[11px] font-bold;
+    @apply cursor-pointer transition-all;
+    @apply hover:border-red-400 hover:text-red-600 hover:bg-red-50 hover:shadow-md;
+
+    &.closed {
+      @apply bg-red-600 border-red-500 shadow-md;
+      @apply text-white;
+      @apply hover:bg-red-700 hover:border-red-700;
+    }
+
+    &.disabled,
+    &:disabled {
+      @apply shadow-none;
+      @apply opacity-40;
+      @apply cursor-not-allowed;
+      @apply hover:border-gray-300 hover:text-gray-600 hover:bg-white;
+    }
+  }
+}
+
+.calendar-nav {
+  @apply flex items-center gap-1;
+
+  &__month {
+    @apply min-w-[84px] px-2;
+    @apply text-gray-700 text-xs font-bold text-center;
+  }
+
+  &__btn {
+    @apply w-7 h-7 p-0;
+    @apply bg-transparent;
+    @apply border-0 #{!important};
+    @apply text-gray-900;
+    @apply hover:bg-emerald-50 hover:text-emerald-700;
+    @apply focus:border-none;
+
+    i {
+      line-height: 1;
+    }
+
+    &:disabled {
+      @apply opacity-30;
+      @apply cursor-not-allowed;
+      @apply hover:bg-transparent hover:text-gray-500;
+    }
+  }
+
+  &__today {
+    @apply px-2 py-1;
+    @apply font-semibold;
+
+    &--active {
+      @apply bg-emerald-50 border-emerald-400;
+      @apply text-emerald-700;
+    }
+  }
+}
+
+// ── 폼 요소 ──────────────────────────────────────────────────────────────────
+.form {
+  &--label {
+    @apply block;
+    @apply mb-1;
+    @apply text-gray-500 text-[11px];
+  }
+
+  &--field {
+    @include form-field;
+  }
+
+  &--input--readonly {
+    @include form-field;
+
+    @apply bg-gray-50;
+    @apply text-gray-800 font-bold;
+  }
+
+  &--textarea {
+    @include form-field;
+    @apply min-h-[60px] resize-y;
+  }
+
+  &--select {
+    @include form--select;
+
+    &.t-leave {
+      @apply bg-yellow-200 #{!important};
+    }
+
+    &.t-off {
+      @apply bg-cyan-100 #{!important};
+      @apply text-cyan-800;
+    }
+
+    &.t-workshop {
+      @apply text-green-800;
+    }
+
+    &.t-health {
+      @apply bg-sky-200 #{!important};
+      @apply text-sky-800;
+    }
+
+    &.t-mixed {
+      @apply bg-pink-300 #{!important};
+      @apply text-pink-800;
+    }
+
+    &.t-weekend {
+      @apply bg-yellow-100 #{!important};
+      @apply text-yellow-800;
+    }
+
+    &.t-holiday-work {
+      @apply bg-gray-200 #{!important};
+      @apply text-gray-800;
+    }
+
+    &--special {
+      @apply w-[60px];
+      @apply border-gray-200;
+      @apply text-gray-500;
+    }
+
+    &--special-active {
+      @apply bg-violet-100 #{!important};
+      @apply border-violet-300 font-semibold;
+      @apply text-violet-800;
+    }
+  }
+
+  &--checkbox-row {
+    @apply flex items-center gap-1.5;
+    @apply text-gray-900 text-xs;
+    @apply cursor-pointer;
+  }
+
+  // 커스텀 체크박스
+  &--checkbox {
+    @include form-check;
+  }
+
+  &-grid-2 {
+    @apply grid grid-cols-2 gap-3;
+  }
+
+  &-grid-3 {
+    @apply grid grid-cols-3 gap-3;
+  }
+
+  &-grid-4 {
+    @apply grid grid-cols-4 gap-3;
+  }
+
+  &--field-wrap {
+    @include form-field-wrap;
+  }
+
+  &--field-inline {
+    @apply flex items-center gap-2;
+  }
+}
+
+// ── 테이블 공통 ───────────────────────────────────────────────────────────────
+// thead: sticky top / tfoot: sticky bottom
+.table {
+  box-sizing: border-box !important;
+  @apply table-fixed;
+  @apply w-full;
+
+  thead {
+    @apply sticky top-0 z-10;
+  }
+
+  th,
+  td {
+    @apply whitespace-nowrap;
+    @apply p-2;
+    @apply border-r last:border-r-0;
+    @apply text-xs;
+  }
+
+  th {
+    @apply border-white;
+    @apply bg-emerald-900;
+    @apply text-white font-semibold text-center;
+  }
+
+  td {
+    @apply border-b border-gray-200;
+    @apply text-gray-900;
+
+    div {
+      @apply overflow-hidden text-ellipsis whitespace-nowrap;
+    }
+  }
+
+  &__cell-inner {
+    @apply flex items-center justify-center gap-1;
+  }
+
+  &__cell__del-btn {
+    @apply bg-transparent border-0 cursor-pointer;
+    @apply text-red-600 text-sm;
+  }
+
+  tbody {
+    tr {
+      @apply hover:bg-sky-50;
+    }
+  }
+
+  tfoot {
+    @apply sticky bottom-0 z-[1];
+
+    td {
+      @apply bg-gray-800;
+      @apply text-white font-bold;
+    }
+  }
+}
+
+// ── 테이블 행 상태 ─────────────────────────────────────────────────────────────
+.row {
+  // 입사일 이전
+  &--before-join {
+    td {
+      @apply bg-gray-100;
+      @apply opacity-30;
+      @apply pointer-events-none select-none;
+    }
+
+    &:hover td {
+      @apply bg-gray-100;
+    }
+  }
+
+  // 주말
+  &--weekend {
+    @apply bg-gray-50;
+  }
+
+  // 주말 근무
+  &--weekend-work {
+    @apply bg-amber-50;
+  }
+
+  //  주말
+  &--holiday {
+    @apply bg-rose-50;
+
+    &:hover {
+      @apply bg-rose-100;
+    }
+  }
+
+  // 오늘
+  &--today {
+    @apply bg-emerald-100;
+
+    &:hover {
+      td {
+        @apply bg-emerald-200;
+      }
+    }
+
+    td:first-child {
+      @apply relative;
+
+      &::before {
+        @apply content-[""];
+        @apply absolute left-0 top-0;
+        @apply w-1 h-full;
+        @apply bg-emerald-600;
+      }
+    }
+
+    .date-num {
+      @apply text-emerald-900 font-bold;
+    }
+  }
+
+  // 합계
+  &--total {
+    @apply font-bold;
+
+    td {
+      @apply bg-emerald-50 border-emerald-200;
+    }
+  }
+
+  // 확정
+  &--confirmed {
+    td {
+      @apply bg-gray-100;
+      @apply opacity-80;
+    }
+
+    &:hover td {
+      @apply bg-gray-200;
+    }
+
+    .form--field,
+    .form--select {
+      @apply bg-gray-100;
+      @apply text-gray-500;
+      @apply cursor-not-allowed;
+    }
+  }
+}
+
+// ── MonthPicker · YearPicker ──────────────────────────────────────────────
+.month-picker {
+  @apply w-[216px] p-3;
+
+  &__header {
+    @apply flex items-center justify-between;
+    @apply mb-2;
+  }
+
+  .calendar-nav__btn {
+    @apply w-6 h-6;
+  }
+
+  &__grid {
+    @apply grid gap-1;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  &__cell {
+    @apply py-1.5;
+    @apply bg-transparent rounded-md border-0;
+    @apply text-gray-700 text-xs text-center;
+    @apply cursor-pointer transition-colors;
+    @apply hover:bg-emerald-50 hover:text-emerald-700;
+
+    &.active {
+      @apply bg-emerald-600;
+      @apply text-white font-semibold;
+
+      &:hover {
+        @apply bg-emerald-700;
+      }
+    }
+
+    &.disabled {
+      @apply opacity-30 cursor-not-allowed;
+      @apply hover:bg-transparent hover:text-gray-700;
+    }
+  }
+}
+
+.year-picker {
+  @apply w-[220px] p-3;
+
+  &__trigger {
+    @apply w-24 px-1 py-0.5;
+    @apply bg-transparent rounded-md border-0;
+    @apply cursor-pointer;
+    @apply text-gray-900 text-[26px] font-extrabold leading-none text-center;
+    @apply hover:bg-emerald-50 hover:text-emerald-700 transition-colors;
+  }
+
+  &__header {
+    @apply flex items-center justify-between;
+    @apply mb-2;
+  }
+  &__range {
+    @apply text-gray-600 text-xs font-semibold;
+  }
+
+  &__nav {
+    @apply flex items-center justify-center;
+    @apply w-6 h-6;
+    @apply bg-transparent rounded-md border-0;
+    @apply text-gray-500;
+    @apply cursor-pointer transition-colors;
+    @apply hover:bg-emerald-50 hover:text-emerald-700;
+  }
+
+  &__grid {
+    @apply grid gap-1;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  &__cell {
+    @apply py-1.5;
+    @apply bg-transparent rounded-md border-0;
+    @apply text-xs text-gray-700 text-center;
+    @apply cursor-pointer transition-colors;
+    @apply hover:bg-emerald-50 hover:text-emerald-700;
+
+    &.active {
+      @apply bg-emerald-600;
+      @apply text-white font-semibold;
+
+      &:hover {
+        @apply bg-emerald-700;
+      }
+    }
+  }
+}
+
+// ── DatePicker 팝오버 ────────────────────────────────────────────────────────
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
+[data-radix-popover-content] {
+  @apply bg-white rounded-lg border border-gray-200;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+// ── 모달 ─────────────────────────────────────────────────────────────────────
+.modal {
+  @apply flex flex-col;
+  @apply relative;
+  @apply w-full max-w-[95vw] max-h-[85vh];
+  @apply bg-white rounded-lg shadow-2xl;
+
+  &-overlay {
+    @apply flex items-center justify-center;
+    @apply overflow-y-auto;
+    @apply fixed inset-0 z-[800];
+    @apply py-6 px-4;
+    @apply bg-black/50;
+  }
+
+  &__title {
+    @apply flex items-center gap-2;
+    @apply px-5 py-3;
+    @apply border-b border-gray-100;
+    @apply text-gray-800 text-lg font-bold;
+  }
+
+  &__section {
+    @apply mb-4 pb-4;
+
+    &-title {
+      @apply mb-2.5;
+      @apply text-brand-light text-[11px] font-bold;
+    }
+  }
+
+  &__body {
+    @apply flex flex-col flex-1 gap-4;
+    @apply overflow-y-auto;
+    @apply px-5 py-3;
+  }
+
+  &__footer {
+    @apply flex items-center gap-2;
+    @apply mt-5 px-5 py-3;
+    @apply border-t border-gray-100;
+
+    .btn-group {
+      @apply flex items-center gap-2;
+      @apply ml-auto;
+    }
+  }
+
+  &__section-title {
+    @apply mb-1;
+    @apply text-gray-500 text-xs font-bold;
+  }
+}
+
+// ── 불러오기 모달 ──────────────────────────────────────────────────────────────
+.import-dropzone {
+  @apply flex flex-col items-center justify-center;
+  @apply px-6 py-10;
+  @apply bg-emerald-50 rounded-xl border-2 border-dashed border-emerald-200;
+  @apply text-center;
+  @apply cursor-pointer transition-colors;
+  @apply hover:border-emerald-400 hover:bg-emerald-100;
+
+  &__icon {
+    @apply text-4xl;
+    @apply mb-2;
+  }
+
+  &__label {
+    @apply mb-1;
+    @apply text-emerald-700 text-sm font-bold;
+  }
+
+  &__hint {
+    @apply text-gray-400 text-xs;
+  }
+}
+
+.import-mode {
+  @apply flex items-center gap-4;
+  @apply mr-auto;
+  @apply text-xs;
+
+  &__item {
+    @apply flex items-center gap-1.5;
+    @apply cursor-pointer;
+  }
+}
+
+// ── LeaveCalendar ──────────────────────────────────────────────────────────
+.leave-calendar {
+  @apply shrink-0;
+  @apply overflow-hidden;
+  @apply w-[40%];
+  @apply bg-white rounded-xl border border-gray-200 shadow-sm;
+
+  @media (max-width: 1024px) {
+    @apply w-full;
+  }
+
+  &__header {
+    @apply flex flex-col gap-3;
+    @apply px-4 py-3;
+    @apply border-b border-gray-100;
+  }
+
+  &__legend {
+    @apply flex flex-wrap items-end gap-1;
+    @apply px-2.5;
+
+    @media (max-width: 1024px) {
+    }
+  }
+
+  &__grid {
+    @apply grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  &__col-header {
+    @apply h-auto py-2;
+    @apply border-b border-gray-100;
+    @apply text-gray-500 text-xs font-semibold text-center;
+
+    &.sun {
+      @apply text-red-500;
+    }
+
+    &.sat {
+      @apply text-blue-500;
+    }
+  }
+
+  &__cell {
+    @apply overflow-hidden;
+    @apply relative;
+    @apply min-w-0 min-h-[80px] p-1;
+    @apply border-b border-r border-gray-100;
+
+    &:nth-child(7n) {
+      @apply border-r-0;
+    }
+
+    &.other-month {
+      @apply bg-gray-50/50;
+    }
+
+    &.today {
+      @apply bg-emerald-50/40;
+    }
+  }
+
+  &__day {
+    @apply block;
+    @apply mb-0.5 pr-1;
+    @apply text-gray-700 text-xs font-semibold text-right;
+
+    &.sun {
+      @apply text-red-500;
+    }
+
+    &.sat {
+      @apply text-blue-500;
+    }
+
+    &.other {
+      @apply text-gray-300;
+    }
+  }
+}
+
+.cal-event {
+  @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  @apply block;
+  @apply w-full;
+  @apply mb-0.5 px-1.5 py-0.5;
+  @apply rounded;
+  @apply text-[11px] font-medium;
+
+  &--leave {
+    @apply bg-blue-500;
+    @apply text-white;
+  }
+
+  &--condolence {
+    @apply bg-blue-800;
+    @apply text-white;
+  }
+
+  &--off {
+    @apply bg-orange-500;
+    @apply text-white;
+  }
+
+  &--extra {
+    @apply bg-gray-400;
+    @apply text-white;
+  }
+
+  &--holiday {
+    @apply bg-amber-400;
+    @apply text-amber-900;
+  }
+}
+
+.cal-legend {
+  @apply flex items-center gap-1;
+  @apply text-gray-500 text-[11px];
+
+  &::before {
+    @apply content-[""];
+    @apply inline-block;
+    @apply w-[10px] h-[10px];
+    @apply rounded-[2px];
+  }
+
+  &--leave::before {
+    @apply bg-blue-500;
+  }
+
+  &--condolence::before {
+    @apply bg-blue-800;
+  }
+
+  &--off::before {
+    @apply bg-orange-500;
+  }
+
+  &--extra::before {
+    @apply bg-gray-400;
+  }
+}
+
+// ── leave-badge ────────────────────────────────────────────────────────────
+.leave-badge {
+  @apply whitespace-nowrap;
+  @apply inline-block;
+  @apply px-1.5 py-0.5;
+  @apply rounded-lg;
+  @apply text-[10px] font-semibold;
+
+  &--annual {
+    @apply bg-emerald-100;
+    @apply text-emerald-900;
+  }
+
+  &--half {
+    @apply bg-lime-100;
+    @apply text-lime-900;
+  }
+
+  &--company {
+    @apply bg-teal-100;
+    @apply text-teal-900;
+  }
+
+  &--other {
+    @apply bg-gray-100;
+    @apply text-gray-700;
+  }
+
+  &--off {
+    @apply bg-blue-100;
+    @apply text-blue-800;
+  }
+
+  &--half-off {
+    @apply bg-sky-100;
+    @apply text-sky-800;
+  }
+
+  &--mixed {
+    @apply bg-violet-100;
+    @apply text-violet-900;
+  }
+
+  &--medical {
+    @apply bg-orange-100;
+    @apply text-orange-900;
+  }
+
+  &--workshop {
+    @apply bg-yellow-100;
+    @apply text-amber-900;
+  }
+}
+
+// ============================================================================
+// PAGES — 페이지별 레이아웃 및 변형
+// ============================================================================
+
+// ============================================================================
+// TRAVEL EXPENSE — 지출 앱 전용
+// ============================================================================
+
+.expense-page {
+  .page-container {
+    @apply gap-5;
+  }
+}
+
+.table {
+  &[data-table="expense"] {
+    @apply w-full border-collapse;
+    min-width: 780px;
+
+    td {
+      // text-left: 내역, 여행지, 구입처, 태그, 메모
+      &[data-col="description"],
+      &[data-col="location"],
+      &[data-col="store"],
+      &[data-col="tag"],
+      &[data-col="memo"] {
+        @apply text-left;
+      }
+
+      // text-center: 번호, 날짜, 액션
+      &[data-col="index"],
+      &[data-col="date"],
+      &[data-col="actions"] {
+        @apply text-center;
+      }
+
+      // text-right: 통화, 금액
+      &[data-col="currency"],
+      &[data-col="amount"] {
+        @apply text-right;
+      }
+    }
+
+    thead th {
+      @apply px-3 py-2;
+      @apply bg-emerald-900 border-r border-white last:border-r-0;
+      @apply whitespace-nowrap;
+      @apply text-white text-xs font-semibold;
+    }
+
+    tbody tr {
+      @apply border-b border-gray-200;
+      @apply transition-colors;
+      @apply hover:bg-sky-50;
+    }
+
+    tbody td {
+      &.num {
+        @apply text-right font-semibold;
+      }
+
+      &.jpy {
+        @apply text-red-600;
+      }
+
+      &.krw {
+        @apply text-blue-700;
+      }
+    }
+
+    tfoot td {
+      @apply px-3 py-2.5;
+      @apply bg-emerald-50 border-t-2 border-gray-300;
+      @apply text-gray-700 text-xs font-bold;
+
+      &.num {
+        @apply text-right;
+      }
+    }
+  }
+}
+
+.toast {
+  @apply fixed bottom-7 left-1/2 -translate-x-1/2 z-50;
+  @apply px-5 py-2.5;
+  @apply bg-gray-800 rounded-full;
+  @apply text-white text-sm font-medium;
+  @apply pointer-events-none
+         opacity-0 transition-opacity duration-200;
+
+  &.show {
+    @apply opacity-100;
+  }
+}
+
+.status-dot {
+  @apply w-2 h-2 rounded-full flex-shrink-0;
+  background: #68d391;
+
+  &.offline {
+    background: #fc8181;
+  }
+}
+
+.travel-info {
+  @apply flex flex-col gap-4;
+  @apply p-4;
+
+  &__section {
+    @apply flex flex-col gap-4;
+  }
+
+  &__summary {
+    @apply shrink-0;
+  }
+
+  &__header {
+    @apply flex items-center gap-2;
+
+    .travel-info__trip-select {
+      @apply w-auto flex-1 max-w-[200px] h-8;
+    }
+  }
+
+  .summary-grid {
+    @apply grid gap-2;
+    @apply grid-cols-3;
+
+    &__card {
+      @apply p-2;
+      @apply bg-white rounded-xl border border-gray-200;
+      @apply text-center;
+
+      &--base {
+        @apply relative;
+        @apply p-2;
+        @apply bg-yellow-50 rounded-xl border border-yellow-300;
+        @apply text-center;
+      }
+
+      &--close {
+        @apply flex flex-col items-center gap-1.5;
+        @apply p-2;
+        @apply text-center;
+        @apply bg-white rounded-xl border border-gray-200;
+
+        &.closed {
+          @apply bg-red-50 border-red-300;
+        }
+      }
+    }
+
+    &__label {
+      @apply flex items-center justify-center gap-1;
+      @apply mb-1;
+      @apply text-gray-500 text-[11px];
+    }
+
+    &__mode {
+      @apply px-1 py-0.5;
+      @apply bg-gray-200 rounded-full;
+      @apply text-gray-500 text-[9px] font-semibold;
+    }
+
+    &__value {
+      @apply text-gray-900 text-sm font-bold;
+    }
+
+    &__value--sub {
+      @apply ml-1;
+      @apply text-sky-400 text-[11px];
+    }
+
+    &__granted {
+      @apply ml-1;
+      @apply text-gray-400 text-[12px];
+    }
+
+    &__edit {
+      @apply flex flex-col gap-1;
+      @apply mt-1;
+    }
+
+    &__edit-actions {
+      @apply flex gap-1;
+    }
+
+    &__base-input {
+      @apply w-full px-1 py-0.5;
+      @apply border border-yellow-400 rounded;
+      @apply text-[12px] text-center;
+    }
+
+    &__save-btn {
+      @apply flex-1 py-0.5 border-0 rounded;
+      @apply bg-brand text-white text-[11px] cursor-pointer;
+    }
+
+    &__reset-btn {
+      @apply flex-1 py-0.5 border-0 rounded;
+      @apply bg-gray-200 text-gray-700 text-[11px] cursor-pointer;
+    }
+
+    &__close-hint {
+      @apply mt-0.5;
+      @apply text-gray-400 text-[10px];
+    }
+  }
+}
+
+.expense-record {
+  @apply flex flex-col gap-10;
+  @apply overflow-hidden;
+  @apply p-4;
+
+  &__section {
+    @apply flex-1 min-h-0 flex flex-col gap-5;
+  }
+
+  &__form {
+    @apply flex flex-col flex-1 gap-4;
+  }
+
+  &__content {
+    @apply flex flex-col flex-1 gap-4;
+  }
+
+  &__table {
+    @apply min-h-0 max-h-[800px];
+    @apply overflow-x-auto overflow-y-auto;
+    @apply bg-white rounded-xl border border-gray-200 shadow-sm;
+
+    .table {
+      &[data-type="work"] {
+        @apply table-fixed;
+        @apply w-full min-w-[880px];
+        @apply border-collapse;
+
+        td {
+          @apply border-b-0;
+          @apply text-center;
+        }
+      }
+    }
+
+    .btn--confirm-toggle {
+      @include btn-base;
+      @apply w-5 h-5 p-0;
+      @apply bg-emerald-600 border-emerald-600;
+      @apply text-white;
+      @apply hover:bg-emerald-700;
+    }
+
+    // ── work-table 전용 ─────────────────────────────────────────────────────
+    .work-table {
+      // 날짜 셀
+      td:first-child {
+        @apply font-bold;
+      }
+
+      // 근로/휴게 셀 내부 래퍼
+      &__cell-inner {
+        @apply flex items-center justify-center gap-1;
+      }
+
+      // override 삭제(✕) 버튼
+      &__del-btn {
+        @apply bg-transparent border-0 cursor-pointer;
+        @apply text-red-600 text-sm;
+      }
+
+      // tfoot 합계 라벨
+      tfoot td:first-child {
+        @apply text-right pr-2;
+      }
+    }
+  }
+
+  &__footer {
+    @apply flex items-center gap-1.5;
+    @apply text-gray-400 text-[11px];
+  }
+}
+
+.form-section {
+  &[data-form="expense"] {
+    @apply grid gap-3 p-4;
+    @apply bg-white rounded-xl border border-gray-200 shadow-sm;
+
+    grid-template-columns: 1fr 2fr 1fr 1fr;
+    grid-template-areas:
+      "trip  .    .      ."
+      "date  desc    location  store"
+      "curr  amount  .         ."
+      "tag   tag     tag       tag"
+      "memo  memo    memo      memo"
+      "btn   btn     btn       btn";
+
+    @media (max-width: 1024px) {
+      // 태블릿: 2열
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "trip     trip"
+        "date     desc"
+        "location store"
+        "curr     amount"
+        "tag      tag"
+        "memo     memo"
+        "btn      btn";
+    }
+
+    @media (max-width: 479px) {
+      // 모바일: 1열
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "trip"
+        "date"
+        "desc"
+        "location"
+        "store"
+        "curr"
+        "amount"
+        "tag"
+        "memo"
+        "btn";
+    }
+
+    .form-section__cell {
+      @apply flex flex-col gap-1;
+
+      label {
+        @apply block;
+        @apply text-gray-500 text-xs font-semibold uppercase tracking-wide;
+
+        // 필수 항목: 라벨 뒤에 빨간 점
+        &.form--label--required::after {
+          content: " *";
+          @apply text-red-500 font-bold;
+        }
+
+        // 선택 항목: 라벨 뒤에 회색 텍스트
+        &.form--label--optional::after {
+          content: " (선택)";
+          @apply text-gray-400 font-normal normal-case tracking-normal;
+        }
+      }
+
+      // 그리드 할당
+      &[data-cell="--trip"] {
+        grid-area: trip;
+      }
+      &[data-cell="--date"] {
+        grid-area: date;
+      }
+      &[data-cell="--desc"] {
+        grid-area: desc;
+      }
+      &[data-cell="--location"] {
+        grid-area: location;
+      }
+      &[data-cell="--store"] {
+        grid-area: store;
+      }
+      &[data-cell="--currency"] {
+        grid-area: curr;
+      }
+      &[data-cell="--amount"] {
+        grid-area: amount;
+      }
+      &[data-cell="--tag"] {
+        grid-area: tag;
+      }
+      &[data-cell="--memo"] {
+        grid-area: memo;
+      }
+
+      &[data-cell="--action"] {
+        grid-area: btn;
+        @apply flex justify-end pt-1;
+
+        .btn {
+          @apply min-w-[120px];
+        }
+      }
+
+      .form--select {
+        @apply w-full;
+      }
+
+      .form--field-inline {
+        .form--field {
+          @apply flex-1;
+        }
+
+        .form-section__hint {
+          @apply flex-1;
+          @apply text-sky-400 text-[12px];
+        }
+      }
+    }
+  }
+}
+.error-section {
+  @apply px-4 py-3;
+  @apply rounded-lg bg-red-50 border border-red-200;
+  @apply text-red-700 text-sm;
+}
+
+.noti-section {
+  @apply px-4 py-3;
+  @apply text-gray-700 text-sm text-center;
+}
+
+// ── 태그 칩 ─────────────────────────────────────────────────────────────────
+.form-field__wrap {
+  @include form-field-wrap;
+
+  &.--tags {
+  }
+}
+
+.tag-chip {
+  @apply inline-flex items-center gap-1;
+  @apply px-2 py-0.5;
+  @apply bg-blue-50 border border-blue-200 rounded-full;
+  @apply text-blue-700 text-xs font-medium;
+  @apply whitespace-nowrap;
+
+  &__remove {
+    @apply appearance-none border-0 bg-transparent p-0;
+    @apply text-blue-400 text-[10px] leading-none;
+    @apply cursor-pointer;
+    @apply hover:text-red-500;
+  }
+
+  &__input {
+    @apply flex-1 min-w-[80px] border-0 outline-none bg-transparent;
+    @apply text-xs text-gray-900 placeholder-gray-300;
+    @apply p-0;
+  }
+
+  // 테이블 내 작은 칩
+  &--sm {
+    @apply px-1.5 py-0 text-[11px];
+  }
+}
+
+// ── 위험 버튼 ────────────────────────────────────────────────────────────────
+.btn--danger {
+  @include btn-base;
+  @apply border-red-200 text-red-600;
+  @apply hover:bg-red-50 hover:border-red-400 hover:text-red-700;
+}
+
+// ── Modal ───────────────────────────────────────────────────────────
+[data-modal="trip"] {
+  @apply w-[460px];
+}
+
+[data-modal="expense-edit"] {
+  @apply w-[460px];
+
+  .form-section {
+    &[data-form="expense"] {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "trip"
+        "date"
+        "desc"
+        "location"
+        "store"
+        "curr"
+        "amount"
+        "tag"
+        "memo"
+        "btn";
+    }
+  }
+}
