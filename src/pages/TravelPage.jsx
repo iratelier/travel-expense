@@ -21,20 +21,18 @@ const EMPTY_FORM = {
   memo: "",
 };
 
-// ── localStorage 여행 목록 ──────────────────────────────────────────────────
-const TRIPS_KEY = "travel-trips-v1";
-function loadTrips() {
-  try {
-    return JSON.parse(localStorage.getItem(TRIPS_KEY) ?? "[]");
-  } catch {
-    return [];
-  }
-}
-function saveTrips(list) {
-  localStorage.setItem(TRIPS_KEY, JSON.stringify(list));
-}
-
 const EMPTY_TRIP = { location: "", startDate: "", endDate: "", companions: "" };
+
+// ── DB 행 → 로컬 객체 변환 ────────────────────────────────────────────────
+function mapTrip(row) {
+  return {
+    id: row.id,
+    location: row.location,
+    startDate: row.start_date ?? "",
+    endDate: row.end_date ?? "",
+    companions: row.companions ?? "",
+  };
+}
 
 export default function TravelPage() {
   const [entries, setEntries] = useState([]);
@@ -50,7 +48,7 @@ export default function TravelPage() {
   useExchangeRate(); // 앱 시작 시 환율 자동 캐시
 
   // ── 여행 목록 ───────────────────────────────────────────────────────────────
-  const [trips, setTrips] = useState(loadTrips);
+  const [trips, setTrips] = useState([]);
   const [selectedTripId, setSelectedTripId] = useState(""); // 선택된 여행 id
   const [showAddTrip, setShowAddTrip] = useState(false);
   const [editingTripId, setEditingTripId] = useState(null); // null = 추가, id = 수정
@@ -81,19 +79,30 @@ export default function TravelPage() {
     fetchEntries();
   }, [fetchEntries]);
 
+  // ── Fetch trips ───────────────────────────────────────────────────────────
+  const fetchTrips = useCallback(async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase
+      .from("trips")
+      .select("*")
+      .order("created_at", { ascending: true });
+    if (!error && data) setTrips(data.map(mapTrip));
+  }, []);
+
+  useEffect(() => {
+    fetchTrips();
+  }, [fetchTrips]);
+
   // ── Realtime ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!supabase) return;
     const channel = supabase
-      .channel("expenses-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "expenses" },
-        fetchEntries,
-      )
+      .channel("db-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, fetchEntries)
+      .on("postgres_changes", { event: "*", schema: "public", table: "trips" }, fetchTrips)
       .subscribe();
     return () => supabase.removeChannel(channel);
-  }, [fetchEntries]);
+  }, [fetchEntries, fetchTrips]);
 
   // ── Toast ─────────────────────────────────────────────────────────────────
   function showToast(msg) {
@@ -263,39 +272,35 @@ export default function TravelPage() {
     setShowAddTrip(true);
   }
 
-  function handleSaveTrip() {
+  async function handleSaveTrip() {
     const loc = tripForm.location.trim();
-    if (!loc) return;
-    let updated;
+    if (!loc || !supabase) return;
+
     if (editingTripId) {
       // 수정
-      updated = trips.map((t) =>
-        t.id === editingTripId
-          ? {
-              ...t,
-              location: loc,
-              startDate: tripForm.startDate,
-              endDate: tripForm.endDate,
-              companions: tripForm.companions.trim(),
-            }
-          : t,
-      );
+      const { error } = await supabase.from("trips").update({
+        location: loc,
+        start_date: tripForm.startDate || null,
+        end_date: tripForm.endDate || null,
+        companions: tripForm.companions.trim() || null,
+      }).eq("id", editingTripId);
+      if (error) { showToast("여행 수정 실패: " + error.message); return; }
       setFilterLoc(loc);
+      setForm((f) => ({ ...f, location: loc }));
     } else {
       // 추가
-      const trip = {
-        id: crypto.randomUUID(),
+      const { data, error } = await supabase.from("trips").insert({
         location: loc,
-        startDate: tripForm.startDate,
-        endDate: tripForm.endDate,
-        companions: tripForm.companions.trim(),
-      };
-      updated = [...trips, trip];
-      setSelectedTripId(trip.id);
+        start_date: tripForm.startDate || null,
+        end_date: tripForm.endDate || null,
+        companions: tripForm.companions.trim() || null,
+      }).select().single();
+      if (error) { showToast("여행 추가 실패: " + error.message); return; }
+      setSelectedTripId(data.id);
       setFilterLoc(loc);
+      setForm((f) => ({ ...f, location: loc }));
     }
-    setTrips(updated);
-    saveTrips(updated);
+
     setTripForm(EMPTY_TRIP);
     setEditingTripId(null);
     setShowAddTrip(false);
