@@ -75,6 +75,12 @@ $color-primary-hover: #e64000;
   // date 캘린더 아이콘 우측 끝 정렬
   &[type="date"] {
     @apply pr-14;
+    text-align: left;
+
+    // 모바일(iOS Safari): 캘린더 아이콘 없음 → 여백 제거
+    @media (max-width: 767px) {
+      @apply pr-2.5;
+    }
 
     &::-webkit-calendar-picker-indicator {
       @apply absolute right-[6px] top-1/2 transform -translate-y-1/2;
@@ -829,7 +835,7 @@ body {
 
     .btn-group {
       @apply flex items-center gap-2;
-      @apply ml-auto;
+      @apply w-full ml-auto;
     }
   }
 
@@ -1189,10 +1195,17 @@ body {
   }
 
   &__header {
-    @apply flex items-center gap-2;
+    @apply flex flex-wrap items-center gap-2;
 
     .travel-info__trip-select {
-      @apply w-auto flex-1 max-w-[200px] h-8;
+      @apply flex-1 h-8;
+      min-width: 120px;
+      max-width: 220px;
+
+      @media (max-width: 479px) {
+        flex-basis: 100%;
+        max-width: 100%;
+      }
     }
   }
 
@@ -1404,7 +1417,7 @@ body {
 
       label {
         @apply block;
-        @apply text-gray-500 text-xs font-semibold uppercase tracking-wide;
+        @apply text-gray-500 text-xs font-semibold uppercase;
 
         // 필수 항목: 라벨 뒤에 빨간 점
         &.form--label--required::after {
@@ -1474,6 +1487,7 @@ body {
     }
   }
 }
+
 .error-section {
   @apply px-4 py-3;
   @apply rounded-lg bg-red-50 border border-red-200;
@@ -1496,39 +1510,62 @@ body {
 .tag-chip {
   @apply inline-flex items-center gap-1;
   @apply px-2 py-0.5;
-  @apply bg-blue-50 border border-blue-200 rounded-full;
+  @apply bg-blue-50 rounded-full border border-blue-200;
   @apply text-blue-700 text-xs font-medium;
   @apply whitespace-nowrap;
 
   &__remove {
-    @apply appearance-none border-0 bg-transparent p-0;
+    @apply appearance-none;
+    @apply bg-transparent border-0 p-0;
     @apply text-blue-400 text-[10px] leading-none;
     @apply cursor-pointer;
     @apply hover:text-red-500;
   }
 
   &__input {
-    @apply flex-1 min-w-[80px] border-0 outline-none bg-transparent;
+    @apply flex-1;
+    @apply min-w-[80px] p-0;
+    @apply bg-transparent border-0 outline-none;
     @apply text-xs text-gray-900 placeholder-gray-300;
-    @apply p-0;
   }
 
   // 테이블 내 작은 칩
   &--sm {
-    @apply px-1.5 py-0 text-[11px];
+    @apply px-1.5 py-0;
+    @apply text-[11px];
   }
 }
 
 // ── 위험 버튼 ────────────────────────────────────────────────────────────────
 .btn--danger {
   @include btn-base;
-  @apply border-red-200 text-red-600;
+  @apply border-red-200;
+  @apply text-red-600;
   @apply hover:bg-red-50 hover:border-red-400 hover:text-red-700;
 }
 
 // ── Modal ───────────────────────────────────────────────────────────
 [data-modal="trip"] {
   @apply w-[460px];
+
+  .travel-card {
+    @apply flex flex-col gap-4;
+    @apply p-3;
+    @apply bg-white rounded-md border border-gray-200 shadow-sm;
+  }
+
+  .title-header {
+    @apply text-gray-900 text-base font-bold uppercase;
+  }
+
+  .modal__section {
+    @apply mb-0 pb-0;
+
+    &-title {
+      @apply mb-2.5;
+      @apply text-brand-light text-[11px] font-bold;
+    }
+  }
 }
 
 [data-modal="expense-edit"] {
@@ -1548,6 +1585,47 @@ body {
         "tag"
         "memo"
         "btn";
+    }
+  }
+}
+
+// ── 여행 목록 (TravelModal 내부) ───────────────────────────────────────────────
+.trip-list {
+  @apply flex flex-wrap gap-1.5;
+  @apply mb-2 pb-2;
+  @apply border-b border-dashed border-gray-200;
+
+  &__item {
+    @apply flex items-center gap-1;
+    @apply px-3 py-1.5;
+    @apply bg-gray-100 rounded-full border border-transparent;
+    @apply text-gray-700 text-xs font-medium;
+    @apply cursor-pointer transition-colors;
+    @apply hover:bg-gray-200;
+
+    &.--active {
+      @apply bg-brand text-white border-brand;
+    }
+
+    &__name {
+      @apply truncate;
+      max-width: 120px;
+    }
+
+    &__date {
+      @apply shrink-0;
+      @apply opacity-70;
+      @apply text-[10px];
+    }
+
+    &--new {
+      @apply bg-white border border-dashed border-gray-300;
+      @apply text-gray-400;
+      @apply hover:border-brand hover:text-brand hover:bg-white;
+
+      &.--active {
+        @apply bg-brand/10 border-brand text-brand;
+      }
     }
   }
 }

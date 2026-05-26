@@ -21,8 +21,6 @@ const EMPTY_FORM = {
   memo: "",
 };
 
-const EMPTY_TRIP = { location: "", startDate: "", endDate: "", companions: "" };
-
 // ── DB 행 → 로컬 객체 변환 ────────────────────────────────────────────────
 function mapTrip(row) {
   return {
@@ -52,7 +50,6 @@ export default function TravelPage() {
   const [selectedTripId, setSelectedTripId] = useState(""); // 선택된 여행 id
   const [showAddTrip, setShowAddTrip] = useState(false);
   const [editingTripId, setEditingTripId] = useState(null); // null = 추가, id = 수정
-  const [tripForm, setTripForm] = useState(EMPTY_TRIP);
 
   // ── 항목 수정 ──────────────────────────────────────────────────────────────
   const [editingEntry, setEditingEntry] = useState(null); // null = 닫힘, object = 수정 대상
@@ -253,63 +250,76 @@ export default function TravelPage() {
     e.target.value = "";
   }
 
-  // ── 여행 추가 ─────────────────────────────────────────────────────────────
+  // ── 여행 추가/수정 모달 열기 ──────────────────────────────────────────────
   function openAddTrip() {
     setEditingTripId(null);
-    setTripForm(EMPTY_TRIP);
     setShowAddTrip(true);
   }
 
   function openEditTrip() {
     if (!selectedTrip) return;
     setEditingTripId(selectedTrip.id);
-    setTripForm({
-      location: selectedTrip.location,
-      startDate: selectedTrip.startDate ?? "",
-      endDate: selectedTrip.endDate ?? "",
-      companions: selectedTrip.companions ?? "",
-    });
     setShowAddTrip(true);
   }
 
-  async function handleSaveTrip() {
-    const loc = tripForm.location.trim();
+  // ── 여행 저장 (추가 or 수정) ──────────────────────────────────────────────
+  async function handleSaveTrip(tripId, formData) {
+    const loc = formData.location.trim();
     if (!loc || !supabase) return;
 
-    if (editingTripId) {
+    if (tripId) {
       // 수정
       const { error } = await supabase.from("trips").update({
         location: loc,
-        start_date: tripForm.startDate || null,
-        end_date: tripForm.endDate || null,
-        companions: tripForm.companions.trim() || null,
-      }).eq("id", editingTripId);
+        start_date: formData.startDate || null,
+        end_date: formData.endDate || null,
+        companions: formData.companions.trim() || null,
+      }).eq("id", tripId);
       if (error) { showToast("여행 수정 실패: " + error.message); return; }
-      setFilterLoc(loc);
-      setForm((f) => ({ ...f, location: loc }));
+      // 현재 선택된 여행이 수정된 경우 필터 동기화
+      if (selectedTripId === tripId) {
+        setFilterLoc(loc);
+        setForm((f) => ({ ...f, location: loc }));
+      }
+      showToast("여행이 수정됐습니다");
     } else {
       // 추가
       const { data, error } = await supabase.from("trips").insert({
         location: loc,
-        start_date: tripForm.startDate || null,
-        end_date: tripForm.endDate || null,
-        companions: tripForm.companions.trim() || null,
+        start_date: formData.startDate || null,
+        end_date: formData.endDate || null,
+        companions: formData.companions.trim() || null,
       }).select().single();
       if (error) { showToast("여행 추가 실패: " + error.message); return; }
       setSelectedTripId(data.id);
       setFilterLoc(loc);
       setForm((f) => ({ ...f, location: loc }));
+      showToast("여행이 추가됐습니다");
     }
 
-    setTripForm(EMPTY_TRIP);
     setEditingTripId(null);
+    setShowAddTrip(false);
+  }
+
+  // ── 여행 삭제 ─────────────────────────────────────────────────────────────
+  async function handleDeleteTrip(tripId) {
+    const trip = trips.find((t) => t.id === tripId);
+    if (!trip || !supabase) return;
+    if (!confirm(`"${trip.location}" 여행을 삭제할까요?`)) return;
+    const { error } = await supabase.from("trips").delete().eq("id", tripId);
+    if (error) { showToast("여행 삭제 실패: " + error.message); return; }
+    if (selectedTripId === tripId) {
+      setSelectedTripId("");
+      setFilterLoc("");
+      setForm((f) => ({ ...f, location: "" }));
+    }
+    showToast("여행이 삭제됐습니다");
     setShowAddTrip(false);
   }
 
   function closeTrip() {
     setShowAddTrip(false);
     setEditingTripId(null);
-    setTripForm(EMPTY_TRIP);
   }
 
   function handleSelectTrip(id) {
@@ -446,12 +456,10 @@ export default function TravelPage() {
         {/* 여행 추가/수정 모달 */}
         {showAddTrip && (
           <TravelModal
-            isEditing={!!editingTripId}
-            tripForm={tripForm}
-            onChange={(key, value) =>
-              setTripForm((f) => ({ ...f, [key]: value }))
-            }
+            trips={trips}
+            initialTripId={editingTripId}
             onSave={handleSaveTrip}
+            onDelete={handleDeleteTrip}
             onClose={closeTrip}
           />
         )}
