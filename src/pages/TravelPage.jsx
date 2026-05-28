@@ -48,7 +48,9 @@ export default function TravelPage() {
 
   // ── 여행 목록 ───────────────────────────────────────────────────────────────
   const [trips, setTrips] = useState([]);
-  const [selectedTripId, setSelectedTripId] = useState(""); // 선택된 여행 id
+  const [selectedTripId, setSelectedTripId] = useState(
+    () => localStorage.getItem("selectedTripId") ?? ""
+  );
   const [showAddTrip, setShowAddTrip] = useState(false);
   const [editingTripId, setEditingTripId] = useState(null); // null = 추가, id = 수정
 
@@ -84,7 +86,21 @@ export default function TravelPage() {
       .from("trips")
       .select("*")
       .order("created_at", { ascending: true });
-    if (!error && data) setTrips(data.map(mapTrip));
+    if (!error && data) {
+      const mapped = data.map(mapTrip);
+      setTrips(mapped);
+      // 저장된 selectedTripId 유효성 검증 및 복원
+      const saved = localStorage.getItem("selectedTripId") ?? "";
+      const valid = saved && mapped.find((t) => t.id === saved);
+      if (valid) {
+        setFilterLoc(valid.location);
+        setForm((f) => ({ ...f, tripId: saved }));
+      } else if (saved) {
+        // 삭제된 여행이면 초기화
+        localStorage.removeItem("selectedTripId");
+        setSelectedTripId("");
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -310,6 +326,7 @@ export default function TravelPage() {
     const { error } = await supabase.from("trips").delete().eq("id", tripId);
     if (error) { showToast("여행 삭제 실패: " + error.message); return; }
     if (selectedTripId === tripId) {
+      localStorage.removeItem("selectedTripId");
       setSelectedTripId("");
       setFilterLoc("");
       setForm((f) => ({ ...f, tripId: "" }));
@@ -326,10 +343,12 @@ export default function TravelPage() {
   function handleSelectTrip(id) {
     setSelectedTripId(id);
     if (!id) {
+      localStorage.removeItem("selectedTripId");
       setFilterLoc("");
       setForm((f) => ({ ...f, tripId: "" }));
       return;
     }
+    localStorage.setItem("selectedTripId", id);
     const trip = trips.find((t) => t.id === id);
     if (trip) {
       setFilterLoc(trip.location);
