@@ -13,7 +13,8 @@ const TODAY = new Date().toISOString().slice(0, 10);
 const EMPTY_FORM = {
   date: TODAY,
   description: "",
-  location: "",
+  tripId: "",   // 여행 ID (--trip 셀렉트)
+  location: "", // 구체적 장소 자유 입력 (고베 등)
   store: "",
   currency: "JPY",
   amount: "",
@@ -119,7 +120,7 @@ export default function TravelPage() {
       showToast("날짜와 내역을 입력해 주세요");
       return;
     }
-    if (trips.length > 0 && !form.location.trim()) {
+    if (trips.length > 0 && !form.tripId) {
       showToast("여행을 선택해 주세요");
       return;
     }
@@ -131,6 +132,7 @@ export default function TravelPage() {
     const payload = {
       date: form.date,
       description: form.description.trim(),
+      trip_id: form.tripId || null,
       location: form.location.trim() || null,
       store: form.store.trim() || null,
       currency: form.currency || "JPY",
@@ -145,7 +147,7 @@ export default function TravelPage() {
       setForm((f) => ({
         ...EMPTY_FORM,
         date: f.date,
-        location: f.location,
+        tripId: f.tripId,
         currency: f.currency,
       }));
       descRef.current?.focus();
@@ -279,7 +281,6 @@ export default function TravelPage() {
       // 현재 선택된 여행이 수정된 경우 필터 동기화
       if (selectedTripId === tripId) {
         setFilterLoc(loc);
-        setForm((f) => ({ ...f, location: loc }));
       }
       showToast("여행이 수정됐습니다");
     } else {
@@ -293,7 +294,7 @@ export default function TravelPage() {
       if (error) { showToast("여행 추가 실패: " + error.message); return; }
       setSelectedTripId(data.id);
       setFilterLoc(loc);
-      setForm((f) => ({ ...f, location: loc }));
+      setForm((f) => ({ ...f, tripId: data.id }));
       showToast("여행이 추가됐습니다");
     }
 
@@ -311,7 +312,7 @@ export default function TravelPage() {
     if (selectedTripId === tripId) {
       setSelectedTripId("");
       setFilterLoc("");
-      setForm((f) => ({ ...f, location: "" }));
+      setForm((f) => ({ ...f, tripId: "" }));
     }
     showToast("여행이 삭제됐습니다");
     setShowAddTrip(false);
@@ -326,13 +327,13 @@ export default function TravelPage() {
     setSelectedTripId(id);
     if (!id) {
       setFilterLoc("");
-      setForm((f) => ({ ...f, location: "" }));
+      setForm((f) => ({ ...f, tripId: "" }));
       return;
     }
     const trip = trips.find((t) => t.id === id);
     if (trip) {
       setFilterLoc(trip.location);
-      setForm((f) => ({ ...f, location: trip.location }));
+      setForm((f) => ({ ...f, tripId: id }));
     }
   }
 
@@ -340,7 +341,7 @@ export default function TravelPage() {
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const filtered = entries.filter((e) => {
-    if (filterLoc && e.location !== filterLoc) return false;
+    if (selectedTripId && e.trip_id !== selectedTripId) return false;
     return true;
   });
 

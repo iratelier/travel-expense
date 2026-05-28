@@ -70,63 +70,76 @@ export default function ExpenseTable({
 
                     return (
                       <tr key={e.id}>
-                        <td data-col="index">{i + 1}</td>
+                        <td data-col="index">
+                          <div>{i + 1}</div>
+                        </td>
                         <td
                           data-col="date"
                           className="whitespace-nowrap text-sm"
                         >
-                          {e.date}
+                          <div>{e.date}</div>
                         </td>
                         <td data-col="description" className="text-sm">
-                          {e.description}
+                          <div>{e.description}</div>
                         </td>
                         <td data-col="location">
-                          {e.location ? (
-                            <span>{e.location}</span>
-                          ) : (
-                            <span className="text-border">-</span>
-                          )}
+                          <div>
+                            {e.location ? (
+                              <span>{e.location}</span>
+                            ) : (
+                              <span className="text-border">-</span>
+                            )}
+                          </div>
                         </td>
                         <td data-col="store">
-                          {e.store ? (
-                            <span>{e.store}</span>
-                          ) : (
-                            <span className="text-border">-</span>
-                          )}
+                          <div>
+                            {e.store ? (
+                              <span>{e.store}</span>
+                            ) : (
+                              <span className="text-border">-</span>
+                            )}
+                          </div>
                         </td>
                         <td
                           data-col="currency"
                           className="text-center text-xs font-semibold text-gray-500"
                         >
-                          {e.currency ?? "-"}
+                          <div>{e.currency ?? "-"}</div>
                         </td>
                         <td data-col="amount" className="num">
-                          {e.amount != null ? (
-                            <span>
-                              {symbol}
-                              {fmt(e.amount)}
-                            </span>
-                          ) : (
-                            <span className="text-border">-</span>
-                          )}
+                          <div>
+                            {e.amount != null ? (
+                              <span>
+                                {symbol}
+                                {fmt(e.amount)}
+                              </span>
+                            ) : (
+                              <span className="text-border">-</span>
+                            )}
+                          </div>
                         </td>
                         <td data-col="tag">
-                          {tagList.length > 0 ? (
-                            <div className="flex items-center gap-1">
-                              {tagList.map((t) => (
-                                <span key={t} className="tag-chip tag-chip--sm">
-                                  {t}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-border">-</span>
-                          )}
+                          <div>
+                            {tagList.length > 0 ? (
+                              <div className="flex items-center gap-1">
+                                {tagList.map((t) => (
+                                  <span
+                                    key={t}
+                                    className="tag-chip tag-chip--sm"
+                                  >
+                                    {t}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-border">-</span>
+                            )}
+                          </div>
                         </td>
                         <td data-col="memo">
-                          <span>
+                          <div>
                             {e.memo || <span className="text-border">-</span>}
-                          </span>
+                          </div>
                         </td>
                         <td data-col="actions">
                           <div className="flex items-center justify-center gap-1">

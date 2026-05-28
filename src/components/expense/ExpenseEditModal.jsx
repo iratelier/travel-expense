@@ -23,6 +23,7 @@ export default function ExpenseEditModal({
   const [form, setForm] = useState({
     date: entry.date ?? "",
     description: entry.description ?? "",
+    tripId: entry.trip_id ?? "",
     location: entry.location ?? "",
     store: entry.store ?? "",
     currency: entry.currency ?? "JPY",
@@ -75,7 +76,7 @@ export default function ExpenseEditModal({
   const unitRate = rates?.[form.currency] ?? null;
 
   function handleSave() {
-    if (trips.length > 0 && !form.location.trim()) {
+    if (trips.length > 0 && !form.tripId) {
       setTripError(true);
       return;
     }
@@ -83,6 +84,7 @@ export default function ExpenseEditModal({
     onSave(entry.id, {
       date: form.date,
       description: form.description.trim(),
+      trip_id: form.tripId || null,
       location: form.location.trim() || null,
       store: form.store.trim() || null,
       currency: form.currency || "JPY",
@@ -146,15 +148,9 @@ export default function ExpenseEditModal({
               <label className="form--label form--label--required">여행</label>
               <select
                 className={`form--select${tripError ? " border-red-400" : ""}`}
-                value={
-                  trips.find((t) => t.location === form.location)?.id ?? ""
-                }
+                value={form.tripId ?? ""}
                 onChange={(e) => {
-                  const trip = trips.find((t) => t.id === e.target.value);
-                  setForm((f) => ({
-                    ...f,
-                    location: trip ? trip.location : "",
-                  }));
+                  setForm((f) => ({ ...f, tripId: e.target.value }));
                   setTripError(false);
                 }}
               >

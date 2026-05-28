@@ -67,13 +67,8 @@ export default function ExpenseForm({
               <label className="form--label form--label--required">여행</label>
               <select
                 className="form--select"
-                value={
-                  trips.find((t) => t.location === form.location)?.id ?? ""
-                }
-                onChange={(e) => {
-                  const trip = trips.find((t) => t.id === e.target.value);
-                  onChange("location", trip ? trip.location : "");
-                }}
+                value={form.tripId ?? ""}
+                onChange={(e) => onChange("tripId", e.target.value)}
               >
                 <option value="">선택 안 함</option>
                 {trips.map((t) => {
