@@ -89,21 +89,13 @@ const EMPTY_INFO = {
   activities: [],
 };
 
-function loadInfo(tripId) {
-  if (!tripId) return structuredClone(EMPTY_INFO);
-  try {
-    const s = localStorage.getItem(`trip_info_${tripId}`);
-    if (!s) return structuredClone(EMPTY_INFO);
-    const p = JSON.parse(s);
-    return {
-      flights: Array.isArray(p.flights) ? p.flights : [],
-      hotels: Array.isArray(p.hotels) ? p.hotels : [],
-      parkings: Array.isArray(p.parkings) ? p.parkings : [],
-      activities: Array.isArray(p.activities) ? p.activities : [],
-    };
-  } catch {
-    return structuredClone(EMPTY_INFO);
-  }
+function parseInfo(data) {
+  return {
+    flights:    Array.isArray(data?.flights)    ? data.flights    : [],
+    hotels:     Array.isArray(data?.hotels)     ? data.hotels     : [],
+    parkings:   Array.isArray(data?.parkings)   ? data.parkings   : [],
+    activities: Array.isArray(data?.activities) ? data.activities : [],
+  };
 }
 
 function mapTrip(row) {
@@ -179,13 +171,10 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
   const [selectedTripId, setSelectedTripId] = useState(
     () => localStorage.getItem("selectedTripId") ?? "",
   );
-  const [info, setInfo] = useState(() =>
-    loadInfo(localStorage.getItem("selectedTripId") ?? ""),
-  );
-  const savedInfo = useRef(
-    loadInfo(localStorage.getItem("selectedTripId") ?? ""),
-  );
+  const [info, setInfo] = useState(structuredClone(EMPTY_INFO));
+  const savedInfo = useRef(structuredClone(EMPTY_INFO));
   const [isDirty, setIsDirty] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
   const toastTimer = useRef(null);
   const [programInputs, setProgramInputs] = useState({});
@@ -206,26 +195,51 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
     if (data) setTrips(data.map(mapTrip));
   }, []);
 
+  const fetchInfo = useCallback(async (tripId) => {
+    const empty = structuredClone(EMPTY_INFO);
+    if (!tripId) { setInfo(empty); savedInfo.current = empty; return; }
+    setLoading(true);
+    if (!supabase) {
+      setInfo(empty); savedInfo.current = empty;
+      setLoading(false); return;
+    }
+    const { data } = await supabase
+      .from("trip_infos")
+      .select("flights, hotels, parkings, activities")
+      .eq("trip_id", tripId)
+      .maybeSingle();
+    const loaded = parseInfo(data);
+    setInfo(loaded);
+    savedInfo.current = structuredClone(loaded);
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
     fetchTrips();
-  }, [fetchTrips]);
+    fetchInfo(selectedTripId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchTrips, fetchInfo]);
 
   // ── 여행 선택 ────────────────────────────────────────────────────────────────
   function handleSelectTrip(id) {
     setSelectedTripId(id);
-    id
-      ? localStorage.setItem("selectedTripId", id)
-      : localStorage.removeItem("selectedTripId");
-    const loaded = loadInfo(id);
-    setInfo(loaded);
-    savedInfo.current = loaded;
+    id ? localStorage.setItem("selectedTripId", id) : localStorage.removeItem("selectedTripId");
+    fetchInfo(id);
     setIsDirty(false);
   }
 
   // ── 저장 / 취소 ──────────────────────────────────────────────────────────────
-  function handleSave() {
+  async function handleSave() {
     if (!selectedTripId) return;
-    localStorage.setItem(`trip_info_${selectedTripId}`, JSON.stringify(info));
+    if (!supabase) { showToast("Supabase 연결 없음"); return; }
+    const { error } = await supabase
+      .from("trip_infos")
+      .upsert(
+        { trip_id: selectedTripId, flights: info.flights, hotels: info.hotels,
+          parkings: info.parkings, activities: info.activities },
+        { onConflict: "trip_id" }
+      );
+    if (error) { showToast("저장 실패 ✗"); return; }
     savedInfo.current = structuredClone(info);
     setIsDirty(false);
     showToast("저장됐습니다 ✓");
@@ -419,6 +433,10 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                 })()}
             </article>
           </section>
+
+          {loading && (
+            <p className="trip-summary__empty">불러오는 중...</p>
+          )}
 
           <section className="info-section">
             {/* ── 항공 정보 ── */}
