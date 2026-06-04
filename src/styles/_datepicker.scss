@@ -1,0 +1,135 @@
+.datepicker {
+  // UI 영역
+  &-picker {
+    @apply flex-col gap-2;
+    @apply p-2.5;
+    @apply rounded-md border-gray-300 shadow-lg;
+  }
+
+  &-controls {
+    @apply items-center;
+    @apply p-0;
+
+    .button {
+      @apply h-8 p-0;
+      @apply border-0;
+      @apply text-gray-900 text-sm;
+      @apply hover:bg-transparent hover:text-blue-600;
+    }
+
+    .view-switch {
+      @apply flex-auto;
+      @apply font-bold;
+    }
+
+    .prev-button,
+    .next-button {
+      flex: 0 0 14.2857142857%;
+      @apply p-0;
+      @apply text-[0px];
+
+      &.disabled {
+        @apply invisible;
+      }
+    }
+
+    .prev-button,
+    .next-button {
+      &::before {
+        font-family: "Font Awesome 5 Free";
+        @apply text-sm;
+      }
+    }
+
+    .prev-button {
+      &::before {
+        content: "\f104";
+      }
+    }
+
+    .next-button {
+      &::before {
+        content: "\f105";
+      }
+    }
+  }
+
+  &-header {
+    .datepicker-controls {
+      @apply p-0;
+
+      .button {
+        @apply hover:bg-transparent;
+      }
+    }
+  }
+
+  &-main {
+    @apply p-0;
+  }
+
+  &-footer {
+    @apply hidden;
+    @apply bg-transparent shadow-none;
+  }
+
+  // datepicker-view > days > days-of-week + datepicker-grid
+  // days-of-week > dow
+  // datepicker-grid > day(day, month, year, prev, next, today, selected, focused, disabled)
+  .days {
+    @apply gap-1;
+  }
+
+  .dow {
+    @apply text-gray-500 text-xs;
+  }
+
+  .days-of-week {
+  }
+
+  &-grid {
+    @apply gap-y-1;
+  }
+
+  &-cell {
+    @apply h-8;
+    @apply text-gray-900 text-xs;
+
+    &.next,
+    &.prev {
+      &:not(.disabled) {
+        @apply text-gray-300;
+      }
+    }
+
+    &.today {
+      @apply bg-emerald-400;
+
+      &:not(.selected) {
+        // @apply bg-emerald-100;
+        @apply bg-transparent;
+        @apply text-emerald-400;
+        @apply hover:bg-emerald-50;
+
+        &:not(.disabled) {
+          @apply text-emerald-400;
+        }
+      }
+    }
+
+    &.focused {
+      &:not(.disabled) {
+        @apply bg-gray-100;
+      }
+    }
+
+    &.selected {
+      @apply bg-blue-500;
+      @apply text-white;
+
+      &:not(.disabled) {
+        @apply bg-blue-500;
+      }
+    }
+  }
+}

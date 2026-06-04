@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Modal from "../common/Modal";
+import DateInput from "../common/DateInput";
 
 const EMPTY_FORM = { location: "", startDate: "", endDate: "", companions: "" };
 
@@ -175,11 +176,10 @@ export default function TravelModal({
           >
             <div className="flex items-center gap-2">
               <div className="flex flex-col" style={{ flex: 1, minWidth: 0 }}>
-                <input
-                  type="date"
+                <DateInput
                   className={`form--field${errors.startDate ? " border-red-400" : ""}`}
                   value={form.startDate}
-                  onChange={set("startDate")}
+                  onChange={(v) => setForm((p) => ({ ...p, startDate: v }))}
                 />
                 {errors.startDate && (
                   <span className="text-red-500 text-xs mt-0.5">
@@ -189,12 +189,10 @@ export default function TravelModal({
               </div>
               <span className="text-xs text-gray-400 shrink-0">~</span>
               <div className="flex flex-col" style={{ flex: 1, minWidth: 0 }}>
-                <input
-                  type="date"
+                <DateInput
                   className={`form--field${errors.endDate ? " border-red-400" : ""}`}
                   value={form.endDate}
-                  min={form.startDate || undefined}
-                  onChange={set("endDate")}
+                  onChange={(v) => setForm((p) => ({ ...p, endDate: v }))}
                 />
                 {errors.endDate && (
                   <span className="text-red-500 text-xs mt-0.5">

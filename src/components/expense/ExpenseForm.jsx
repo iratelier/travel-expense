@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import SectionTitle from "../common/SectionTitle";
+import NumInput from "../common/NumInput";
+import DateInput from "../common/DateInput";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 export default function ExpenseForm({
@@ -89,11 +91,10 @@ export default function ExpenseForm({
           {/* 날짜 */}
           <div className="form-section__cell" data-cell="--date">
             <label className="form--label form--label--required">날짜</label>
-            <input
-              type="date"
+            <DateInput
               className="form--field"
               value={form.date}
-              onChange={set("date")}
+              onChange={(v) => onChange("date", v)}
             />
           </div>
 
@@ -158,13 +159,11 @@ export default function ExpenseForm({
           <div className="form-section__cell" data-cell="--amount">
             <label className="form--label form--label--required">금액</label>
             <div className="form--field-inline">
-              <input
-                type="number"
+              <NumInput
                 className="form--field text-right"
                 placeholder="0"
                 value={form.amount}
-                onChange={set("amount")}
-                onKeyDown={handleKey}
+                onChange={(v) => onChange("amount", v)}
               />
               {/* 금액 입력 + 환율 로드 시에만 힌트 노출 */}
               {krwEstimate != null && (

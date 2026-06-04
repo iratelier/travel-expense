@@ -2,6 +2,8 @@
   $common-icons-font-dir: "../assets/fonts"
 );
 
+@use "./datepicker";
+
 // ============================================================================
 //   COMMON — 전역 기반
 // ============================================================================
@@ -44,8 +46,8 @@ $color-primary-hover: #e64000;
 // 모든 폼 요소 공통
 @mixin form-base {
   @apply box-border appearance-none;
-  @apply relative;
   @apply flex flex-wrap items-center gap-1;
+  @apply relative;
   @apply w-full min-h-[32px] px-2 py-1;
   @apply bg-white rounded-md border border-gray-300;
   @apply cursor-pointer transition-colors;
@@ -72,6 +74,20 @@ $color-primary-hover: #e64000;
       @apply m-0;
     }
   }
+
+  &.-calendar {
+    --bs-form--calendar-bg-image: url("data:image/svg+xml,%3Csvg width='22' height='22' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M7.333.917V2.75h7.334V.917H16.5V2.75h2.75c.506 0 .917.41.917.917v16.041c0 .507-.41.917-.917.917H2.75a.917.917 0 01-.917-.917V3.667c0-.507.41-.917.917-.917H5.5V.917h1.833zM3.208 7.792V19.25h15.584V7.792H3.208z' fill='%239097A3'/%3E%3Cpath fill='%239097A3' d='M5.271 10.542h2.292v2.292H5.271zM5.271 14.209h2.292v2.292H5.271zM9.854 10.542h2.292v2.292H9.854zM9.854 14.209h2.292v2.292H9.854zM14.438 10.542h2.292v2.292h-2.292zM14.438 14.209h2.292v2.292h-2.292z'/%3E%3C/svg%3E");
+    --bs-form--calendar-hover-bg-image: url("data:image/svg+xml,%3Csvg width='22' height='22' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M7.333.917V2.75h7.334V.917H16.5V2.75h2.75c.506 0 .917.41.917.917v16.041c0 .507-.41.917-.917.917H2.75a.917.917 0 01-.917-.917V3.667c0-.507.41-.917.917-.917H5.5V.917h1.833zM3.208 7.792V19.25h15.584V7.792H3.208z' fill='%2317191c'/%3E%3Cpath fill='%2317191c' d='M5.271 10.542h2.292v2.292H5.271zM5.271 14.209h2.292v2.292H5.271zM9.854 10.542h2.292v2.292H9.854zM9.854 14.209h2.292v2.292H9.854zM14.438 10.542h2.292v2.292h-2.292zM14.438 14.209h2.292v2.292h-2.292z'/%3E%3C/svg%3E");
+
+    @apply pr-10 #{!important};
+    @apply bg-no-repeat bg-[image:var(--bs-form--calendar-bg-image)];
+    background-position: calc(100% - 15px) 13px;
+    background-size: 22px;
+    @apply hover:bg-[image:var(--bs-form--calendar-hover-bg-image)] #{!important};
+    @apply active:bg-[image:var(--bs-form--calendar-hover-bg-image)] #{!important};
+    @apply focus:bg-[image:var(--bs-form--calendar-hover-bg-image)] #{!important};
+  }
+
   // date 캘린더 아이콘 우측 끝 정렬
   &[type="date"] {
     @apply pr-14;
@@ -141,13 +157,12 @@ $color-primary-hover: #e64000;
 // ── 기본 레이아웃 ──────────────────────────────────────────────────────────────
 body {
   @apply bg-gray-100;
-  // @apply text-gray-900 text-xs;
 }
 
 .wrap {
   @apply flex flex-col;
   @apply relative overflow-hidden;
-  @apply w-full min-w-[360px] min-h-screen pt-12;
+  @apply w-full min-w-[360px] min-h-screen pt-14;
 }
 
 .main {
@@ -160,7 +175,7 @@ body {
   @apply flex items-center;
   @apply fixed top-0 left-0 z-[500];
   @apply w-full px-5 py-3;
-  @apply bg-black shadow-md;
+  @apply bg-emerald-900 shadow-md;
   @apply text-white;
 }
 
@@ -211,7 +226,7 @@ body {
 // ── Page Top Bar ────────────────────────────────────────────────────────────
 .page-top {
   @apply flex flex-wrap items-center gap-3;
-  @apply fixed top-12 left-0 z-[100];
+  @apply fixed top-14 left-0 z-[100];
   @apply w-full px-4 py-2;
   @apply bg-white border-b border-gray-200;
 
@@ -1295,6 +1310,52 @@ body {
   }
 }
 
+// ── 여행 정보 요약 (info-summary) ─────────────────────────────────────────────
+.info-summary {
+  @apply flex flex-col gap-2;
+  @apply px-4 py-3;
+  @apply bg-gray-50 rounded-xl border border-gray-200;
+
+  &__meta {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  &__location {
+    @apply text-gray-900 text-sm font-bold;
+  }
+
+  &__period {
+    @apply text-gray-400 text-xs;
+  }
+
+  &__costs {
+    @apply flex flex-wrap items-center gap-x-4 gap-y-1;
+    @apply pt-1;
+    @apply border-t border-gray-200;
+  }
+
+  &__cost-item {
+    @apply flex items-center gap-1.5;
+  }
+
+  &__total {
+    @apply flex items-center gap-1.5;
+    @apply ml-auto;
+  }
+
+  &__cost-label {
+    @apply text-gray-400 text-xs;
+  }
+
+  &__cost-val {
+    @apply text-gray-800 text-sm font-semibold;
+
+    &.--total {
+      @apply text-brand font-bold;
+    }
+  }
+}
+
 .expense-record {
   @apply flex flex-col gap-10;
   @apply overflow-hidden;
@@ -1587,6 +1648,178 @@ body {
         "btn";
     }
   }
+}
+
+// ── 메인 페이지 ──────────────────────────────────────────────────────────────────
+.main-page {
+  .page-container {
+    @apply flex flex-col;
+  }
+}
+
+.trip-summary-section {
+  @apply p-4;
+}
+
+.trip-summary__empty {
+  @apply text-center text-gray-400 text-sm py-12;
+}
+
+.trip-card-grid {
+  @apply grid gap-3;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.trip-card {
+  @apply flex flex-col gap-2;
+  @apply p-4;
+  @apply bg-white rounded-xl border border-gray-200;
+  @apply transition-shadow;
+  @apply hover:shadow-md;
+
+  &__top {
+    @apply flex items-center justify-between gap-2;
+  }
+
+  &__location {
+    @apply text-gray-900 text-base font-bold;
+    @apply truncate;
+  }
+
+  &__nights {
+    @apply shrink-0;
+    @apply px-2 py-0.5;
+    @apply bg-gray-100 rounded-full;
+    @apply text-gray-500 text-[11px] font-medium;
+  }
+
+  &__period {
+    @apply text-gray-500 text-xs;
+  }
+
+  &__companions {
+    @apply text-gray-400 text-xs;
+    @apply flex items-center gap-1;
+  }
+
+  &__expense {
+    @apply flex flex-wrap items-center gap-1.5;
+    @apply mt-1 pt-2;
+    @apply border-t border-gray-100;
+  }
+
+  &__amount {
+    @apply text-gray-800 text-sm font-semibold;
+
+    &.--empty {
+      @apply text-gray-300 font-normal;
+    }
+  }
+
+  &__count {
+    @apply ml-auto;
+    @apply text-gray-400 text-[11px];
+  }
+
+  &__actions {
+    @apply flex gap-2;
+    @apply mt-1;
+  }
+}
+
+// ── 여행 정보 페이지 ────────────────────────────────────────────────────────────
+.info-page {
+  .page-container {
+    @apply flex flex-col gap-4;
+  }
+}
+
+.info-section {
+  @apply flex flex-col gap-4;
+  @apply p-4;
+}
+
+.info-card {
+  @apply bg-white rounded-xl border border-gray-200;
+  @apply overflow-hidden;
+
+  &__header {
+    @apply flex items-center gap-2;
+    @apply px-4 py-2.5;
+    @apply cursor-pointer select-none;
+    @apply transition-colors;
+    @apply hover:bg-gray-50;
+  }
+
+  &.--open > &__header {
+    @apply border-b border-gray-100;
+  }
+
+  &__title {
+    @apply text-gray-800 text-sm font-bold;
+    @apply flex-1;
+  }
+
+  &__chevron {
+    @apply text-gray-400 text-xs;
+    @apply shrink-0;
+  }
+
+  &__body {
+    @apply flex flex-col gap-3;
+    @apply p-4;
+  }
+
+  &__content {
+    // 아코디언 내부 래퍼 — 실제 body들은 info-card__body 사용
+  }
+
+  &__empty {
+    @apply px-4 py-6;
+    @apply text-center text-gray-400 text-sm;
+  }
+
+  &__divider {
+    @apply border-t border-dashed border-gray-200;
+  }
+
+  &__item-header {
+    @apply flex items-center gap-2;
+    @apply mb-3;
+  }
+
+  &__item-no {
+    @apply text-xs font-bold text-gray-400;
+  }
+}
+
+.info-grid {
+  @apply grid gap-x-3 gap-y-3;
+  grid-template-columns: repeat(3, 1fr);
+
+  @media (max-width: 479px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.info-field {
+  @apply flex flex-col gap-1;
+  min-width: 0;
+}
+
+.info-sub-group {
+  @apply pt-3 mt-1;
+  @apply border-t border-dashed border-gray-100;
+
+  &__label {
+    @apply block mb-2;
+    @apply text-[11px] font-semibold text-gray-400 uppercase tracking-wide;
+  }
+}
+
+// btn--sm
+.btn--sm {
+  @apply px-2 py-1 text-[11px];
 }
 
 // ── 여행 목록 (TravelModal 내부) ───────────────────────────────────────────────

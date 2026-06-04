@@ -33,7 +33,7 @@ function mapTrip(row) {
   };
 }
 
-export default function TravelPage() {
+export default function TravelPage({ currentPage, onNavigate }) {
   const [entries, setEntries] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
@@ -367,7 +367,7 @@ export default function TravelPage() {
   return (
     <>
       <div className="wrap expense-page">
-        <Header />
+        <Header currentPage={currentPage} onNavigate={onNavigate} />
 
         <main className="main">
           {/* 페이지 상단 */}
