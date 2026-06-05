@@ -4,6 +4,9 @@ import Header from "../components/layout/Header";
 import Toast from "../components/common/Toast";
 import NumInput from "../components/common/NumInput";
 import DateInput from "../components/common/DateInput";
+import TravelModal from "../components/travel/TravelModal";
+import { useTripCrud } from "../hooks/useTripCrud";
+import Checkbox from "../components/common/Checkbox";
 
 // ── UID 헬퍼 ─────────────────────────────────────────────────────────────────
 function uid() {
@@ -60,11 +63,34 @@ function emptyParking() {
     name: "",
     phone: "",
     address: "",
-    scheduledUse: "",
-    scheduledReturn: "",
+    useDate: "",
+    useTime: "",
+    returnDate: "",
+    returnTime: "",
     product: "",
     cost: "",
+    nights: "",
+    memo: "",
+  };
+}
+function emptyValet() {
+  return {
+    _id: uid(),
+    bookingDate: "",
+    bookingNo: "",
+    bookingAgency: "",
+    name: "",
+    phone: "",
+    address: "",
+    useDate: "",
+    useTime: "",
+    returnDate: "",
+    returnTime: "",
+    product: "",
+    cost: "",
+    nights: "",
     insuranceChecked: false,
+    insuranceCost: "",
     memo: "",
   };
 }
@@ -73,12 +99,16 @@ function emptyActivity() {
     _id: uid(),
     bookingDate: "",
     bookingNo: "",
+    bookingAgency: "",
     name: "",
-    address: "",
     phone: "",
-    programs: [],
+    address: "",
+    useDate: "",
+    useTime: "",
+    product: "",
     cost: "",
-    notes: "",
+    count: "",
+    memo: "",
   };
 }
 
@@ -86,14 +116,16 @@ const EMPTY_INFO = {
   flights: [],
   hotels: [],
   parkings: [],
+  valets: [],
   activities: [],
 };
 
 function parseInfo(data) {
   return {
-    flights:    Array.isArray(data?.flights)    ? data.flights    : [],
-    hotels:     Array.isArray(data?.hotels)     ? data.hotels     : [],
-    parkings:   Array.isArray(data?.parkings)   ? data.parkings   : [],
+    flights: Array.isArray(data?.flights) ? data.flights : [],
+    hotels: Array.isArray(data?.hotels) ? data.hotels : [],
+    parkings: Array.isArray(data?.parkings) ? data.parkings : [],
+    valets: Array.isArray(data?.valets) ? data.valets : [],
     activities: Array.isArray(data?.activities) ? data.activities : [],
   };
 }
@@ -112,7 +144,9 @@ function mapTrip(row) {
 function Field({ label, children, span = 1 }) {
   return (
     <div className="info-field" style={{ gridColumn: `span ${span}` }}>
-      <label className="form--label form--label--optional">{label}</label>
+      {label && (
+        <label className="form--label form--label--optional">{label}</label>
+      )}
       {children}
     </div>
   );
@@ -127,7 +161,14 @@ function InfoCard({ title, action, children }) {
         <i
           className={`info-card__chevron ni-chevron-${open ? "up" : "down"}`}
         />
-        {action && <div onClick={(e) => e.stopPropagation()}>{action}</div>}
+        {action && (
+          <div
+            className="info-card__action"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {action}
+          </div>
+        )}
       </div>
       {open && <div className="info-card__content">{children}</div>}
     </div>
@@ -138,12 +179,7 @@ function SubGroup({ label, children, cols }) {
   return (
     <div className="info-sub-group">
       <span className="info-sub-group__label">{label}</span>
-      <div
-        className="info-grid"
-        style={
-          cols ? { gridTemplateColumns: `repeat(${cols}, 1fr)` } : undefined
-        }
-      >
+      <div className="info-grid" style={{ "--grid-cols": cols ?? 3 }}>
         {children}
       </div>
     </div>
@@ -166,7 +202,7 @@ function ItemDivider({ index, onRemove }) {
 }
 
 // ── 메인 페이지 컴포넌트 ──────────────────────────────────────────────────────
-export default function TravelInfoPage({ currentPage, onNavigate }) {
+export default function TravelInfoPage() {
   const [trips, setTrips] = useState([]);
   const [selectedTripId, setSelectedTripId] = useState(
     () => localStorage.getItem("selectedTripId") ?? "",
@@ -177,7 +213,6 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
   const toastTimer = useRef(null);
-  const [programInputs, setProgramInputs] = useState({});
 
   function showToast(msg) {
     setToast(msg);
@@ -195,17 +230,41 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
     if (data) setTrips(data.map(mapTrip));
   }, []);
 
+  const {
+    showModal: showTripModal,
+    editingTripId: editingTripIdModal,
+    openAdd: openAddTrip,
+    closeModal: closeTripModal,
+    handleSaveTrip,
+    handleDeleteTrip: handleDeleteTripBase,
+  } = useTripCrud({
+    showToast,
+    onInsert: fetchTrips,
+    onUpdate: fetchTrips,
+    onDelete: fetchTrips,
+  });
+
+  function handleDeleteTrip(tripId) {
+    return handleDeleteTripBase(tripId, trips);
+  }
+
   const fetchInfo = useCallback(async (tripId) => {
     const empty = structuredClone(EMPTY_INFO);
-    if (!tripId) { setInfo(empty); savedInfo.current = empty; return; }
+    if (!tripId) {
+      setInfo(empty);
+      savedInfo.current = empty;
+      return;
+    }
     setLoading(true);
     if (!supabase) {
-      setInfo(empty); savedInfo.current = empty;
-      setLoading(false); return;
+      setInfo(empty);
+      savedInfo.current = empty;
+      setLoading(false);
+      return;
     }
     const { data } = await supabase
       .from("trip_infos")
-      .select("flights, hotels, parkings, activities")
+      .select("flights, hotels, parkings, valets, activities")
       .eq("trip_id", tripId)
       .maybeSingle();
     const loaded = parseInfo(data);
@@ -223,7 +282,9 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
   // ── 여행 선택 ────────────────────────────────────────────────────────────────
   function handleSelectTrip(id) {
     setSelectedTripId(id);
-    id ? localStorage.setItem("selectedTripId", id) : localStorage.removeItem("selectedTripId");
+    id
+      ? localStorage.setItem("selectedTripId", id)
+      : localStorage.removeItem("selectedTripId");
     fetchInfo(id);
     setIsDirty(false);
   }
@@ -231,15 +292,27 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
   // ── 저장 / 취소 ──────────────────────────────────────────────────────────────
   async function handleSave() {
     if (!selectedTripId) return;
-    if (!supabase) { showToast("Supabase 연결 없음"); return; }
-    const { error } = await supabase
-      .from("trip_infos")
-      .upsert(
-        { trip_id: selectedTripId, flights: info.flights, hotels: info.hotels,
-          parkings: info.parkings, activities: info.activities },
-        { onConflict: "trip_id" }
-      );
-    if (error) { showToast("저장 실패 ✗"); return; }
+    if (!supabase) {
+      showToast("Supabase 연결 없음");
+      return;
+    }
+    const { error } = await supabase.from("trip_infos").upsert(
+      {
+        trip_id: selectedTripId,
+        flights: info.flights,
+        hotels: info.hotels,
+        parkings: info.parkings,
+        valets: info.valets,
+        activities: info.activities,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "trip_id" },
+    );
+    if (error) {
+      console.error("[trip_infos] 저장 실패:", error);
+      showToast(`저장 실패: ${error.message}`);
+      return;
+    }
     savedInfo.current = structuredClone(info);
     setIsDirty(false);
     showToast("저장됐습니다 ✓");
@@ -255,21 +328,29 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
   // ── 여행 정보 총 지출 계산 ────────────────────────────────────────────────────
   function calcInfoTotal() {
     const flightSum = info.flights.reduce((s, f) => s + flightTotal(f), 0);
-    const hotelSum = info.hotels.reduce((s, h) => s + (Number(h.cost) || 0), 0);
+    const hotelSum = info.hotels.reduce(
+      (s, h) => s + (Number(h.cost) || 0) * (Number(h.nights) || 0),
+      0,
+    );
     const parkSum = info.parkings.reduce(
-      (s, p) => s + (Number(p.cost) || 0),
+      (s, p) => s + (Number(p.cost) || 0) * (Number(p.nights) || 0),
+      0,
+    );
+    const valetSum = info.valets.reduce(
+      (s, vl) => s + (Number(vl.cost) || 0) * (Number(vl.nights) || 0),
       0,
     );
     const actSum = info.activities.reduce(
-      (s, a) => s + (Number(a.cost) || 0),
+      (s, a) => s + (Number(a.cost) || 0) * (Number(a.count) || 0),
       0,
     );
     return {
       flightSum,
       hotelSum,
       parkSum,
+      valetSum,
       actSum,
-      total: flightSum + hotelSum + parkSum + actSum,
+      total: flightSum + hotelSum + parkSum + valetSum + actSum,
     };
   }
 
@@ -305,50 +386,37 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
     return adult + child;
   }
 
-  // ── 체험 프로그램 ────────────────────────────────────────────────────────────
-  function addProgram(idx, val) {
-    const v = val.trim();
-    if (!v) return;
-    const progs = info.activities[idx]?.programs ?? [];
-    if (progs.includes(v)) {
-      setProgramInputs((p) => ({ ...p, [idx]: "" }));
-      return;
-    }
-    setItem("activities", idx, "programs", [...progs, v]);
-    setProgramInputs((p) => ({ ...p, [idx]: "" }));
-  }
-  function removeProgram(idx, prog) {
-    setItem(
-      "activities",
-      idx,
-      "programs",
-      (info.activities[idx]?.programs ?? []).filter((p) => p !== prog),
-    );
-  }
-
   // ── 렌더 ─────────────────────────────────────────────────────────────────────
   return (
     <div className="wrap info-page">
-      <Header currentPage={currentPage} onNavigate={onNavigate} />
+      <Header />
 
       <main className="main">
         <div className="page-top">
           <div className="page-top__title-nav">
-            <span className="page-top__title">여행 정보</span>
+            <span className="page-top__title">나의 여행</span>
           </div>
-          {isDirty && (
-            <div className="page-top__actions">
-              <button
-                className="btn btn--primary page-top__btn"
-                onClick={handleSave}
-              >
-                저장
-              </button>
-              <button className="btn page-top__btn" onClick={handleCancel}>
-                취소
-              </button>
-            </div>
-          )}
+          <div className="page-top__actions">
+            {isDirty && (
+              <>
+                <button
+                  className="btn btn--primary page-top__btn"
+                  onClick={handleSave}
+                >
+                  저장
+                </button>
+                <button className="btn page-top__btn" onClick={handleCancel}>
+                  취소
+                </button>
+              </>
+            )}
+            <button
+              className="btn btn--primary page-top__btn"
+              onClick={openAddTrip}
+            >
+              <i className="ni-add" /> 여행 추가
+            </button>
+          </div>
         </div>
 
         <div className="page-container">
@@ -377,8 +445,14 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
               </div>
               {selectedTrip &&
                 (() => {
-                  const { flightSum, hotelSum, parkSum, actSum, total } =
-                    calcInfoTotal();
+                  const {
+                    flightSum,
+                    hotelSum,
+                    parkSum,
+                    valetSum,
+                    actSum,
+                    total,
+                  } = calcInfoTotal();
                   const fmt = (n) => n.toLocaleString("ko-KR");
                   const fmtDate = (d) => (d ? d.replace(/-/g, ".") : null);
                   const start = fmtDate(selectedTrip.startDate);
@@ -387,6 +461,7 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                     { label: "항공", val: flightSum },
                     { label: "호텔", val: hotelSum },
                     { label: "주차", val: parkSum },
+                    { label: "렌트", val: valetSum },
                     { label: "체험", val: actSum },
                   ].filter((r) => r.val > 0);
                   return (
@@ -434,9 +509,7 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
             </article>
           </section>
 
-          {loading && (
-            <p className="trip-summary__empty">불러오는 중...</p>
-          )}
+          {loading && <p className="trip-summary__empty">불러오는 중...</p>}
 
           <section className="info-section">
             {/* ── 항공 정보 ── */}
@@ -466,7 +539,7 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                         index={idx}
                         onRemove={() => removeItem("flights", idx)}
                       />
-                      <div className="info-grid">
+                      <SubGroup label="[예약 정보]">
                         <Field label="예약일">
                           <DateInput
                             className="form--field"
@@ -489,14 +562,14 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           <input
                             type="text"
                             className="form--field"
-                            placeholder="예: 하나투어"
+                            placeholder="마이리얼트립"
                             value={f.bookingAgency}
                             onChange={si("flights", idx)("bookingAgency")}
                           />
                         </Field>
-                      </div>
+                      </SubGroup>
 
-                      <SubGroup label="출발">
+                      <SubGroup label="[출발 정보]" cols="2">
                         <Field label="항공편명">
                           <input
                             type="text"
@@ -510,7 +583,7 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           <input
                             type="text"
                             className="form--field"
-                            placeholder="예: ICN"
+                            placeholder="인천국제공항(ICN)"
                             value={f.depAirport}
                             onChange={si("flights", idx)("depAirport")}
                           />
@@ -519,27 +592,29 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           <DateInput
                             className="form--field"
                             value={f.depDate}
-                            onChange={(v) =>
-                              setItem("flights", idx, "depDate", v)
-                            }
+                            onChange={(v) => {
+                              setItem("flights", idx, "depDate", v);
+                              setItem("flights", idx, "arrDate", v);
+                            }}
                           />
                         </Field>
                         <Field label="출발시간">
                           <input
-                            type="time"
+                            type="text"
                             className="form--field"
+                            placeholder="HH:MM"
                             value={f.depTime}
                             onChange={si("flights", idx)("depTime")}
                           />
                         </Field>
                       </SubGroup>
 
-                      <SubGroup label="도착">
+                      <SubGroup label="[도착 정보]" cols="2">
                         <Field label="항공편명">
                           <input
                             type="text"
                             className="form--field"
-                            placeholder="예: KE124"
+                            placeholder="KE124"
                             value={f.arrFlightNo}
                             onChange={si("flights", idx)("arrFlightNo")}
                           />
@@ -548,7 +623,7 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           <input
                             type="text"
                             className="form--field"
-                            placeholder="예: 괌 (GWM)"
+                            placeholder="괌 (GWM)"
                             value={f.arrAirport}
                             onChange={si("flights", idx)("arrAirport")}
                           />
@@ -557,6 +632,7 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           <DateInput
                             className="form--field"
                             value={f.arrDate}
+                            minDate={f.depDate || undefined}
                             onChange={(v) =>
                               setItem("flights", idx, "arrDate", v)
                             }
@@ -564,16 +640,17 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                         </Field>
                         <Field label="도착시간">
                           <input
-                            type="time"
+                            type="text"
                             className="form--field"
+                            placeholder="HH:MM"
                             value={f.arrTime}
                             onChange={si("flights", idx)("arrTime")}
                           />
                         </Field>
                       </SubGroup>
 
-                      <SubGroup label="운임">
-                        <Field label="성인 비용">
+                      <SubGroup label="[운임 정보]" cols="2">
+                        <Field label="성인 운임">
                           <NumInput
                             className="form--field text-right"
                             placeholder="0"
@@ -593,7 +670,7 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                             }
                           />
                         </Field>
-                        <Field label="소아 비용">
+                        <Field label="소아 운임">
                           <NumInput
                             className="form--field text-right"
                             placeholder="0"
@@ -622,8 +699,9 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           />
                         </Field>
                       </SubGroup>
-
-                      <div className="info-grid" style={{ marginTop: "12px" }}>
+                    </div>
+                    <div className="info-card__footer">
+                      <div className="info-grid">
                         <Field label="메모" span={3}>
                           <input
                             type="text"
@@ -665,7 +743,7 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                       index={idx}
                       onRemove={() => removeItem("hotels", idx)}
                     />
-                    <div className="info-grid">
+                    <SubGroup label="[예약 정보]">
                       <Field label="예약일">
                         <DateInput
                           className="form--field"
@@ -688,11 +766,14 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                         <input
                           type="text"
                           className="form--field"
-                          placeholder="예: 아고다"
+                          placeholder="마이리얼트립"
                           value={h.bookingAgency}
                           onChange={si("hotels", idx)("bookingAgency")}
                         />
                       </Field>
+                    </SubGroup>
+
+                    <SubGroup label="[업체 정보]" cols="2">
                       <Field label="업체명">
                         <input
                           type="text"
@@ -711,13 +792,69 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           onChange={si("hotels", idx)("phone")}
                         />
                       </Field>
-                      <Field label="주소" span={3}>
+                      <Field label="주소" span={2}>
                         <input
                           type="text"
                           className="form--field"
                           placeholder="주소"
                           value={h.address}
                           onChange={si("hotels", idx)("address")}
+                        />
+                      </Field>
+                    </SubGroup>
+
+                    <SubGroup label="[체크인]" cols="2">
+                      <Field label="날짜">
+                        <DateInput
+                          className="form--field"
+                          value={h.checkInDate}
+                          onChange={(v) => {
+                            setItem("hotels", idx, "checkInDate", v);
+                            setItem("hotels", idx, "checkOutDate", v);
+                          }}
+                        />
+                      </Field>
+                      <Field label="시간">
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="HH:MM"
+                          value={h.checkInTime}
+                          onChange={si("hotels", idx)("checkInTime")}
+                        />
+                      </Field>
+                    </SubGroup>
+
+                    <SubGroup label="[체크아웃]" cols="2">
+                      <Field label="날짜">
+                        <DateInput
+                          className="form--field"
+                          value={h.checkOutDate}
+                          minDate={h.checkInDate || undefined}
+                          onChange={(v) =>
+                            setItem("hotels", idx, "checkOutDate", v)
+                          }
+                        />
+                      </Field>
+                      <Field label="시간">
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="HH:MM"
+                          value={h.checkOutTime}
+                          onChange={si("hotels", idx)("checkOutTime")}
+                        />
+                      </Field>
+                    </SubGroup>
+
+                    <SubGroup label="[예약 상품]">
+                      <Field label="룸타입" span={3}>
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="디럭스 더블"
+                          value={h.roomType}
+                          onChange={si("hotels", idx)("roomType")}
                         />
                       </Field>
                       <Field label="비용">
@@ -736,58 +873,25 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           onChange={(v) => setItem("hotels", idx, "nights", v)}
                         />
                       </Field>
-                      <Field label="룸타입">
-                        <input
-                          type="text"
-                          className="form--field"
-                          placeholder="예: 디럭스 더블"
-                          value={h.roomType}
-                          onChange={si("hotels", idx)("roomType")}
-                        />
-                      </Field>
-                    </div>
-
-                    <SubGroup label="체크인">
-                      <Field label="날짜">
-                        <DateInput
-                          className="form--field"
-                          value={h.checkInDate}
-                          onChange={(v) =>
-                            setItem("hotels", idx, "checkInDate", v)
+                      <Field label="합계">
+                        <NumInput
+                          className="form--field text-right"
+                          placeholder="자동 합계"
+                          value={
+                            (Number(h.cost) || 0) * (Number(h.nights) || 0) > 0
+                              ? String(
+                                  (Number(h.cost) || 0) *
+                                    (Number(h.nights) || 0),
+                                )
+                              : ""
                           }
-                        />
-                      </Field>
-                      <Field label="시간">
-                        <input
-                          type="time"
-                          className="form--field"
-                          value={h.checkInTime}
-                          onChange={si("hotels", idx)("checkInTime")}
+                          readOnly
                         />
                       </Field>
                     </SubGroup>
-
-                    <SubGroup label="체크아웃">
-                      <Field label="날짜">
-                        <DateInput
-                          className="form--field"
-                          value={h.checkOutDate}
-                          onChange={(v) =>
-                            setItem("hotels", idx, "checkOutDate", v)
-                          }
-                        />
-                      </Field>
-                      <Field label="시간">
-                        <input
-                          type="time"
-                          className="form--field"
-                          value={h.checkOutTime}
-                          onChange={si("hotels", idx)("checkOutTime")}
-                        />
-                      </Field>
-                    </SubGroup>
-
-                    <div className="info-grid" style={{ marginTop: "12px" }}>
+                  </div>
+                  <div className="info-card__footer">
+                    <div className="info-grid">
                       <Field label="메모" span={3}>
                         <input
                           type="text"
@@ -828,7 +932,7 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                       index={idx}
                       onRemove={() => removeItem("parkings", idx)}
                     />
-                    <div className="info-grid">
+                    <SubGroup label="[예약 정보]">
                       <Field label="예약일">
                         <DateInput
                           className="form--field"
@@ -856,6 +960,9 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           onChange={si("parkings", idx)("bookingAgency")}
                         />
                       </Field>
+                    </SubGroup>
+
+                    <SubGroup label="[업체 정보]" cols="2">
                       <Field label="업체명">
                         <input
                           type="text"
@@ -874,7 +981,7 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           onChange={si("parkings", idx)("phone")}
                         />
                       </Field>
-                      <Field label="주소" span={3}>
+                      <Field label="주소" span={2}>
                         <input
                           type="text"
                           className="form--field"
@@ -883,23 +990,54 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           onChange={si("parkings", idx)("address")}
                         />
                       </Field>
-                      <Field label="이용 예정일시">
-                        <input
-                          type="datetime-local"
+                    </SubGroup>
+
+                    <SubGroup label="[이용일]" cols="2">
+                      <Field label="날짜">
+                        <DateInput
                           className="form--field"
-                          value={pk.scheduledUse}
-                          onChange={si("parkings", idx)("scheduledUse")}
+                          value={pk.useDate}
+                          onChange={(v) => {
+                            setItem("parkings", idx, "useDate", v);
+                            setItem("parkings", idx, "returnDate", v);
+                          }}
                         />
                       </Field>
-                      <Field label="반납 예정일시">
+                      <Field label="시간">
                         <input
-                          type="datetime-local"
+                          type="text"
                           className="form--field"
-                          value={pk.scheduledReturn}
-                          onChange={si("parkings", idx)("scheduledReturn")}
+                          placeholder="HH:MM"
+                          value={pk.useTime}
+                          onChange={si("parkings", idx)("useTime")}
                         />
                       </Field>
-                      <Field label="상품명">
+                    </SubGroup>
+
+                    <SubGroup label="[반납일]" cols="2">
+                      <Field label="날짜">
+                        <DateInput
+                          className="form--field"
+                          value={pk.returnDate}
+                          minDate={pk.useDate || undefined}
+                          onChange={(v) =>
+                            setItem("parkings", idx, "returnDate", v)
+                          }
+                        />
+                      </Field>
+                      <Field label="시간">
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="HH:MM"
+                          value={pk.returnTime}
+                          onChange={si("parkings", idx)("returnTime")}
+                        />
+                      </Field>
+                    </SubGroup>
+
+                    <SubGroup label="[예약 상품]">
+                      <Field label="상품명" span={3}>
                         <input
                           type="text"
                           className="form--field"
@@ -916,33 +1054,36 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           onChange={(v) => setItem("parkings", idx, "cost", v)}
                         />
                       </Field>
-                      <Field label="자동차 보험" span={2}>
-                        <div
-                          className="flex items-center gap-2"
-                          style={{ paddingTop: "2px" }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={pk.insuranceChecked}
-                            onChange={(e) =>
-                              setItem(
-                                "parkings",
-                                idx,
-                                "insuranceChecked",
-                                e.target.checked,
-                              )
-                            }
-                            className="form-check"
-                            style={{ flexShrink: 0 }}
-                          />
-                          <span
-                            className="form--label form--label--optional"
-                            style={{ margin: 0 }}
-                          >
-                            포함
-                          </span>
-                        </div>
+                      <Field label="일수">
+                        <NumInput
+                          className="form--field text-right"
+                          placeholder="0"
+                          value={pk.nights}
+                          onChange={(v) =>
+                            setItem("parkings", idx, "nights", v)
+                          }
+                        />
                       </Field>
+                      <Field label="합계">
+                        <NumInput
+                          className="form--field text-right"
+                          placeholder="자동 합계"
+                          value={
+                            (Number(pk.cost) || 0) * (Number(pk.nights) || 0) >
+                            0
+                              ? String(
+                                  (Number(pk.cost) || 0) *
+                                    (Number(pk.nights) || 0),
+                                )
+                              : ""
+                          }
+                          readOnly
+                        />
+                      </Field>
+                    </SubGroup>
+                  </div>
+                  <div className="info-card__footer">
+                    <div className="info-grid">
                       <Field label="메모" span={3}>
                         <input
                           type="text"
@@ -950,6 +1091,207 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           placeholder="메모"
                           value={pk.memo}
                           onChange={si("parkings", idx)("memo")}
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </InfoCard>
+
+            {/* ── 렌트 ── */}
+            <InfoCard
+              title="렌트"
+              action={
+                <button
+                  className="btn btn--primary btn--sm"
+                  onClick={() => addItem("valets", emptyValet)}
+                >
+                  <i className="ni-add" /> 추가
+                </button>
+              }
+            >
+              {info.valets.length === 0 && (
+                <div className="info-card__empty">
+                  등록된 렌트 정보가 없습니다
+                </div>
+              )}
+              {info.valets.map((vl, idx) => (
+                <div key={vl._id} className="info-card__item">
+                  {idx > 0 && <div className="info-card__divider" />}
+                  <div className="info-card__body">
+                    <ItemDivider
+                      index={idx}
+                      onRemove={() => removeItem("valets", idx)}
+                    />
+                    <SubGroup label="[예약 정보]">
+                      <Field label="예약일">
+                        <DateInput
+                          className="form--field"
+                          value={vl.bookingDate}
+                          onChange={(v) =>
+                            setItem("valets", idx, "bookingDate", v)
+                          }
+                        />
+                      </Field>
+                      <Field label="예약번호">
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="예약번호"
+                          value={vl.bookingNo}
+                          onChange={si("valets", idx)("bookingNo")}
+                        />
+                      </Field>
+                      <Field label="예약업체">
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="예약업체"
+                          value={vl.bookingAgency}
+                          onChange={si("valets", idx)("bookingAgency")}
+                        />
+                      </Field>
+                    </SubGroup>
+
+                    <SubGroup label="[업체 정보]" cols="2">
+                      <Field label="업체명">
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="업체명"
+                          value={vl.name}
+                          onChange={si("valets", idx)("name")}
+                        />
+                      </Field>
+                      <Field label="전화번호">
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="전화번호"
+                          value={vl.phone}
+                          onChange={si("valets", idx)("phone")}
+                        />
+                      </Field>
+                      <Field label="주소" span={2}>
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="주소"
+                          value={vl.address}
+                          onChange={si("valets", idx)("address")}
+                        />
+                      </Field>
+                    </SubGroup>
+
+                    <SubGroup label="[이용일]" cols="2">
+                      <Field label="날짜">
+                        <DateInput
+                          className="form--field"
+                          value={vl.useDate}
+                          onChange={(v) => {
+                            setItem("valets", idx, "useDate", v);
+                            setItem("valets", idx, "returnDate", v);
+                          }}
+                        />
+                      </Field>
+                      <Field label="시간">
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="HH:MM"
+                          value={vl.useTime}
+                          onChange={si("valets", idx)("useTime")}
+                        />
+                      </Field>
+                    </SubGroup>
+
+                    <SubGroup label="[반납일]" cols="2">
+                      <Field label="날짜">
+                        <DateInput
+                          className="form--field"
+                          value={vl.returnDate}
+                          minDate={vl.useDate || undefined}
+                          onChange={(v) =>
+                            setItem("valets", idx, "returnDate", v)
+                          }
+                        />
+                      </Field>
+                      <Field label="시간">
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="HH:MM"
+                          value={vl.returnTime}
+                          onChange={si("valets", idx)("returnTime")}
+                        />
+                      </Field>
+                    </SubGroup>
+
+                    <SubGroup label="[예약 상품]" cols="3">
+                      <Field label="상품명" span={3}>
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="상품명"
+                          value={vl.product}
+                          onChange={si("valets", idx)("product")}
+                        />
+                      </Field>
+                      <Field span={3}>
+                        <Checkbox
+                          checked={vl.insuranceChecked}
+                          onChange={(e) =>
+                            setItem(
+                              "valets",
+                              idx,
+                              "insuranceChecked",
+                              e.target.checked,
+                            )
+                          }
+                        >
+                          자동차 보험 포함
+                        </Checkbox>
+                      </Field>
+                      <Field label="비용">
+                        <NumInput
+                          className="form--field text-right"
+                          placeholder="0"
+                          value={vl.cost}
+                          onChange={(v) => setItem("valets", idx, "cost", v)}
+                        />
+                      </Field>
+                      <Field label="일수">
+                        <NumInput
+                          className="form--field text-right"
+                          placeholder="0"
+                          value={vl.nights}
+                          onChange={(v) => setItem("valets", idx, "nights", v)}
+                        />
+                      </Field>
+                      <Field label="합계">
+                        <NumInput
+                          className="form--field text-right"
+                          placeholder="자동 합계"
+                          value={(() => {
+                            const total =
+                              (Number(vl.cost) || 0) * (Number(vl.nights) || 0);
+                            return total > 0 ? String(total) : "";
+                          })()}
+                          readOnly
+                        />
+                      </Field>
+                    </SubGroup>
+                  </div>
+                  <div className="info-card__footer">
+                    <div className="info-grid">
+                      <Field label="메모" span={3}>
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="메모"
+                          value={vl.memo}
+                          onChange={si("valets", idx)("memo")}
                         />
                       </Field>
                     </div>
@@ -983,7 +1325,7 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                       index={idx}
                       onRemove={() => removeItem("activities", idx)}
                     />
-                    <div className="info-grid">
+                    <SubGroup label="[예약 정보]">
                       <Field label="예약일">
                         <DateInput
                           className="form--field"
@@ -1002,6 +1344,18 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           onChange={si("activities", idx)("bookingNo")}
                         />
                       </Field>
+                      <Field label="예약업체">
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="예약업체"
+                          value={act.bookingAgency}
+                          onChange={si("activities", idx)("bookingAgency")}
+                        />
+                      </Field>
+                    </SubGroup>
+
+                    <SubGroup label="[업체 정보]" cols="2">
                       <Field label="업체명">
                         <input
                           type="text"
@@ -1009,6 +1363,15 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           placeholder="업체명"
                           value={act.name}
                           onChange={si("activities", idx)("name")}
+                        />
+                      </Field>
+                      <Field label="전화번호">
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="전화번호"
+                          value={act.phone}
+                          onChange={si("activities", idx)("phone")}
                         />
                       </Field>
                       <Field label="주소" span={2}>
@@ -1020,13 +1383,37 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           onChange={si("activities", idx)("address")}
                         />
                       </Field>
-                      <Field label="전화번호">
+                    </SubGroup>
+
+                    <SubGroup label="[이용일]" cols="2">
+                      <Field label="날짜">
+                        <DateInput
+                          className="form--field"
+                          value={act.useDate}
+                          onChange={(v) =>
+                            setItem("activities", idx, "useDate", v)
+                          }
+                        />
+                      </Field>
+                      <Field label="시간">
                         <input
                           type="text"
                           className="form--field"
-                          placeholder="전화번호"
-                          value={act.phone}
-                          onChange={si("activities", idx)("phone")}
+                          placeholder="HH:MM"
+                          value={act.useTime}
+                          onChange={si("activities", idx)("useTime")}
+                        />
+                      </Field>
+                    </SubGroup>
+
+                    <SubGroup label="[예약 상품]">
+                      <Field label="상품명" span={3}>
+                        <input
+                          type="text"
+                          className="form--field"
+                          placeholder="상품명"
+                          value={act.product}
+                          onChange={si("activities", idx)("product")}
                         />
                       </Field>
                       <Field label="비용">
@@ -1039,63 +1426,43 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
                           }
                         />
                       </Field>
-                      <Field label="프로그램" span={3}>
-                        <div
-                          className="form-field__wrap --tags"
-                          onClick={() =>
-                            document.getElementById(`prog-${idx}`)?.focus()
+                      <Field label="개수">
+                        <NumInput
+                          className="form--field text-right"
+                          placeholder="0"
+                          value={act.count}
+                          onChange={(v) =>
+                            setItem("activities", idx, "count", v)
                           }
-                        >
-                          {act.programs.map((prog) => (
-                            <span key={prog} className="tag-chip">
-                              {prog}
-                              <button
-                                type="button"
-                                className="tag-chip__remove"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  removeProgram(idx, prog);
-                                }}
-                                tabIndex={-1}
-                              >
-                                ✕
-                              </button>
-                            </span>
-                          ))}
-                          <input
-                            id={`prog-${idx}`}
-                            type="text"
-                            className="tag-chip__input"
-                            placeholder={
-                              act.programs.length === 0
-                                ? "프로그램 입력 후 Enter"
-                                : ""
-                            }
-                            value={programInputs[idx] ?? ""}
-                            onChange={(e) =>
-                              setProgramInputs((p) => ({
-                                ...p,
-                                [idx]: e.target.value,
-                              }))
-                            }
-                            onKeyDown={(e) => {
-                              if (e.nativeEvent.isComposing) return;
-                              if (e.key === "Enter" || e.key === ",") {
-                                e.preventDefault();
-                                addProgram(idx, programInputs[idx] ?? "");
-                              }
-                            }}
-                            onBlur={(e) => addProgram(idx, e.target.value)}
-                          />
-                        </div>
+                        />
                       </Field>
-                      <Field label="비고" span={3}>
+                      <Field label="합계">
+                        <NumInput
+                          className="form--field text-right"
+                          placeholder="자동 합계"
+                          value={
+                            (Number(act.cost) || 0) * (Number(act.count) || 0) >
+                            0
+                              ? String(
+                                  (Number(act.cost) || 0) *
+                                    (Number(act.count) || 0),
+                                )
+                              : ""
+                          }
+                          readOnly
+                        />
+                      </Field>
+                    </SubGroup>
+                  </div>
+                  <div className="info-card__footer">
+                    <div className="info-grid">
+                      <Field label="메모" span={3}>
                         <input
                           type="text"
                           className="form--field"
-                          placeholder="비고"
-                          value={act.notes}
-                          onChange={si("activities", idx)("notes")}
+                          placeholder="메모"
+                          value={act.memo}
+                          onChange={si("activities", idx)("memo")}
                         />
                       </Field>
                     </div>
@@ -1108,6 +1475,15 @@ export default function TravelInfoPage({ currentPage, onNavigate }) {
       </main>
 
       <Toast message={toast} />
+      {showTripModal && (
+        <TravelModal
+          trips={trips}
+          initialTripId={editingTripIdModal}
+          onSave={handleSaveTrip}
+          onDelete={handleDeleteTrip}
+          onClose={closeTripModal}
+        />
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { useRef, useEffect } from "react";
  * - value: 'YYYY-MM-DD' 문자열 (없으면 "")
  * - onChange(v): 날짜 선택 시 'YYYY-MM-DD' 문자열을 전달
  */
-export default function DateInput({ value, onChange, className, placeholder }) {
+export default function DateInput({ value, onChange, className, placeholder, minDate }) {
   const ref      = useRef(null);
   const dpRef    = useRef(null);
   const cbRef    = useRef(onChange);   // onChange 최신 참조 유지
@@ -19,8 +19,11 @@ export default function DateInput({ value, onChange, className, placeholder }) {
     const dp = new window.Datepicker(ref.current, {
       language: "ko",
       container: document.body,
-      autohide: true,
+      autohide: false,
       todayHighlight: true,
+      todayBtn: true,
+      clearBtn: true,
+      ...(minDate ? { minDate } : {}),
     });
     dpRef.current = dp;
 
@@ -39,6 +42,13 @@ export default function DateInput({ value, onChange, className, placeholder }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── minDate 변경 시 datepicker 동기화 ───────────────────────────────────
+  useEffect(() => {
+    const dp = dpRef.current;
+    if (!dp) return;
+    dp.setOptions({ minDate: minDate || null });
+  }, [minDate]);
 
   // ── value prop 외부 변경 시 datepicker 동기화 ────────────────────────────
   useEffect(() => {

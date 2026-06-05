@@ -51,8 +51,8 @@ $color-primary-hover: #e64000;
   @apply w-full min-h-[32px] px-2 py-1;
   @apply bg-white rounded-md border border-gray-300;
   @apply cursor-pointer transition-colors;
-  @apply focus:outline-none focus:border-emerald-500 focus:ring-emerald-200 focus:ring-1 focus:ring-brand;
-  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-0;
+  @apply focus:outline-none focus:border-emerald-500;
+  @apply focus-visible:outline-none;
   @apply disabled:bg-gray-50 disabled:cursor-not-allowed;
 }
 
@@ -135,7 +135,8 @@ $color-primary-hover: #e64000;
   --bs-form-check-bg-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='17' viewBox='0 0 16 17' fill='none'%3e%3cpath fill-rule='evenodd' clip-rule='evenodd' d='M13.6094 5.1812L5.7917 12.762L1.724 8.81756L2.65219 7.86036L5.7917 10.9047L12.6812 4.224L13.6094 5.1812Z' fill='white'/%3e%3c/svg%3e");
 
   @include form-base;
-  @apply w-4 h-4 min-w-[16px];
+  @apply w-4 h-4 min-w-4 min-h-4 p-0;
+  @apply rounded-sm;
   @apply checked:bg-blue-600 checked:border-blue-600;
   @apply bg-no-repeat bg-center bg-contain bg-[image:var(--bs-form-check-bg-image)];
 }
@@ -148,7 +149,7 @@ $color-primary-hover: #e64000;
   @apply relative;
   @apply px-2.5 py-1.5;
   @apply bg-white rounded-md border border-gray-200;
-  @apply text-gray-900 text-xs;
+  @apply text-gray-900 text-xs leading-none;
   @apply cursor-pointer transition-all;
 
   @apply disabled:bg-gray-50 disabled:border-gray-200 disabled:opacity-35 disabled:cursor-not-allowed;
@@ -156,7 +157,7 @@ $color-primary-hover: #e64000;
 
 // ── 기본 레이아웃 ──────────────────────────────────────────────────────────────
 body {
-  @apply bg-gray-100;
+  @apply bg-gray-50;
 }
 
 .wrap {
@@ -175,17 +176,20 @@ body {
   @apply flex items-center;
   @apply fixed top-0 left-0 z-[500];
   @apply w-full px-5 py-3;
-  @apply bg-emerald-900 shadow-md;
+  @apply bg-gray-900 shadow-md;
   @apply text-white;
 }
 
 .header__logo {
-  @apply flex items-center gap-2;
   @apply mr-auto;
   @apply text-white text-base font-bold tracking-tight;
 
   &-icon {
     @apply text-white;
+  }
+
+  h1 {
+    @apply flex items-center gap-2;
   }
 }
 
@@ -340,15 +344,15 @@ body {
   }
 
   &--edit {
+    @apply min-h-6;
     @apply bg-white border-gray-300;
     @apply text-blue-700;
     @apply hover:bg-blue-100;
   }
 
   &--delete {
-    @apply bg-red-50;
-    @apply text-red-700;
-    @apply hover:bg-red-100;
+    @apply min-h-7;
+    @apply hover:bg-gray-50;
   }
 
   &--add {
@@ -360,7 +364,7 @@ body {
 
   &--confirm {
     @apply w-5 h-5 p-0;
-    @apply text-[11px] font-bold leading-none;
+    @apply text-[11px] font-bold;
     @apply hover:bg-emerald-50 hover:border-emerald-600 hover:text-emerald-600;
 
     &.auto-locked {
@@ -455,7 +459,6 @@ body {
 .form {
   &--label {
     @apply block;
-    @apply mb-1;
     @apply text-gray-500 text-[11px];
   }
 
@@ -524,9 +527,14 @@ body {
     }
   }
 
+  // 커스텀 체크박스
+  &--checkbox {
+    @include form-check;
+  }
+
   &--checkbox-row {
     @apply flex items-center gap-1.5;
-    @apply text-gray-900 text-xs;
+    @apply text-xs;
     @apply cursor-pointer;
   }
 
@@ -573,11 +581,12 @@ body {
     @apply p-2;
     @apply border-r last:border-r-0;
     @apply text-xs;
+    @apply transition-colors;
   }
 
   th {
     @apply border-white;
-    @apply bg-emerald-900;
+    @apply bg-gray-600;
     @apply text-white font-semibold text-center;
   }
 
@@ -687,8 +696,8 @@ body {
   // 확정
   &--confirmed {
     td {
-      @apply bg-gray-100;
-      @apply opacity-80;
+      @apply bg-gray-200;
+      @apply opacity-40;
     }
 
     &:hover td {
@@ -1136,19 +1145,6 @@ body {
       }
     }
 
-    thead th {
-      @apply px-3 py-2;
-      @apply bg-emerald-900 border-r border-white last:border-r-0;
-      @apply whitespace-nowrap;
-      @apply text-white text-xs font-semibold;
-    }
-
-    tbody tr {
-      @apply border-b border-gray-200;
-      @apply transition-colors;
-      @apply hover:bg-sky-50;
-    }
-
     tbody td {
       &.num {
         @apply text-right font-semibold;
@@ -1314,10 +1310,11 @@ body {
 .info-summary {
   @apply flex flex-col gap-2;
   @apply px-4 py-3;
-  @apply bg-gray-50 rounded-xl border border-gray-200;
+  @apply bg-white rounded-xl border border-gray-200;
 
   &__meta {
     @apply flex flex-wrap items-center gap-2;
+    @apply pb-2;
   }
 
   &__location {
@@ -1330,7 +1327,7 @@ body {
 
   &__costs {
     @apply flex flex-wrap items-center gap-x-4 gap-y-1;
-    @apply pt-1;
+    @apply pt-2;
     @apply border-t border-gray-200;
   }
 
@@ -1724,6 +1721,10 @@ body {
   &__actions {
     @apply flex gap-2;
     @apply mt-1;
+
+    .btn {
+      @apply min-h-7;
+    }
   }
 }
 
@@ -1755,18 +1756,30 @@ body {
     @apply border-b border-gray-100;
   }
 
+  &__action {
+    .btn {
+      @apply min-h-7;
+    }
+  }
+
   &__title {
-    @apply text-gray-800 text-sm font-bold;
     @apply flex-1;
+    @apply text-gray-800 text-base font-bold;
   }
 
   &__chevron {
-    @apply text-gray-400 text-xs;
     @apply shrink-0;
+    @apply text-gray-400 text-xs;
   }
 
   &__body {
-    @apply flex flex-col gap-3;
+    @apply flex flex-col gap-5;
+    @apply p-4;
+  }
+
+  &__footer {
+    @apply flex flex-col gap-5;
+    @apply bg-yellow-50 border-t border-yellow-400;
     @apply p-4;
   }
 
@@ -1776,7 +1789,7 @@ body {
 
   &__empty {
     @apply px-4 py-6;
-    @apply text-center text-gray-400 text-sm;
+    @apply text-gray-400 text-sm text-center;
   }
 
   &__divider {
@@ -1785,7 +1798,6 @@ body {
 
   &__item-header {
     @apply flex items-center gap-2;
-    @apply mb-3;
   }
 
   &__item-no {
@@ -1795,7 +1807,7 @@ body {
 
 .info-grid {
   @apply grid gap-x-3 gap-y-3;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(var(--grid-cols, 3), 1fr);
 
   @media (max-width: 479px) {
     grid-template-columns: repeat(2, 1fr);
@@ -1808,12 +1820,11 @@ body {
 }
 
 .info-sub-group {
-  @apply pt-3 mt-1;
-  @apply border-t border-dashed border-gray-100;
+  @apply flex flex-col gap-3;
 
   &__label {
-    @apply block mb-2;
-    @apply text-[11px] font-semibold text-gray-400 uppercase tracking-wide;
+    @apply block;
+    @apply text-gray-900 text-sm font-semibold uppercase tracking-wide;
   }
 }
 

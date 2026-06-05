@@ -1,4 +1,9 @@
 .datepicker {
+  &-dropdown {
+    @apply absolute;
+    z-index: 9000; // 모달(z-800)보다 높게
+  }
+
   // UI 영역
   &-picker {
     @apply flex-col gap-2;
@@ -11,46 +16,9 @@
     @apply p-0;
 
     .button {
-      @apply h-8 p-0;
-      @apply border-0;
+      @apply rounded-md #{!important};
       @apply text-gray-900 text-sm;
-      @apply hover:bg-transparent hover:text-blue-600;
-    }
-
-    .view-switch {
-      @apply flex-auto;
-      @apply font-bold;
-    }
-
-    .prev-button,
-    .next-button {
-      flex: 0 0 14.2857142857%;
-      @apply p-0;
-      @apply text-[0px];
-
-      &.disabled {
-        @apply invisible;
-      }
-    }
-
-    .prev-button,
-    .next-button {
-      &::before {
-        font-family: "Font Awesome 5 Free";
-        @apply text-sm;
-      }
-    }
-
-    .prev-button {
-      &::before {
-        content: "\f104";
-      }
-    }
-
-    .next-button {
-      &::before {
-        content: "\f105";
-      }
+      @apply hover:bg-transparent hover:text-emerald-600;
     }
   }
 
@@ -61,6 +29,43 @@
       .button {
         @apply hover:bg-transparent;
       }
+
+      .view-switch {
+        @apply flex-auto;
+        @apply font-bold;
+      }
+
+      .prev-button,
+      .next-button {
+        flex: 0 0 14.2857142857%;
+        @apply h-8 p-0;
+        @apply border-0;
+        @apply text-[0px];
+
+        &.disabled {
+          @apply invisible;
+        }
+      }
+
+      .prev-button,
+      .next-button {
+        &::before {
+          font-family: "Font Awesome 5 Free";
+          @apply text-sm;
+        }
+      }
+
+      .prev-button {
+        &::before {
+          content: "\f104";
+        }
+      }
+
+      .next-button {
+        &::before {
+          content: "\f105";
+        }
+      }
     }
   }
 
@@ -69,8 +74,17 @@
   }
 
   &-footer {
-    @apply hidden;
     @apply bg-transparent shadow-none;
+
+    .datepicker-controls {
+      @apply p-0;
+
+      .button {
+        @apply h-8;
+        @apply border-gray-300;
+        @apply hover:bg-emerald-50;
+      }
+    }
   }
 
   // datepicker-view > days > days-of-week + datepicker-grid
@@ -85,15 +99,25 @@
   }
 
   .days-of-week {
+    .dow {
+      @apply mx-1;
+    }
   }
 
   &-grid {
-    @apply gap-y-1;
+    @apply justify-center gap-y-1;
   }
 
   &-cell {
+    // flex: 13.285714%;
+    flex: calc(13.285714% - 8px);
     @apply h-8;
+    @apply mx-1;
     @apply text-gray-900 text-xs;
+
+    &:not(.day) {
+      flex: calc(25% - 8px);
+    }
 
     &.next,
     &.prev {
@@ -103,16 +127,21 @@
     }
 
     &.today {
-      @apply bg-emerald-400;
+      @apply text-emerald-600;
+
+      &.focused {
+        // @apply text-white;
+        @apply text-emerald-600;
+      }
 
       &:not(.selected) {
-        // @apply bg-emerald-100;
         @apply bg-transparent;
-        @apply text-emerald-400;
         @apply hover:bg-emerald-50;
 
         &:not(.disabled) {
-          @apply text-emerald-400;
+          @apply bg-transparent;
+          @apply text-emerald-600;
+          @apply hover:bg-emerald-50;
         }
       }
     }
@@ -124,11 +153,13 @@
     }
 
     &.selected {
-      @apply bg-blue-500;
-      @apply text-white;
+      // @apply bg-emerald-50;
+      // @apply text-emerald-600;
 
       &:not(.disabled) {
-        @apply bg-blue-500;
+        @apply bg-emerald-600;
+        @apply text-white;
+        @apply hover:bg-emerald-700;
       }
     }
   }

@@ -7,6 +7,7 @@ import ExpenseTable from "../components/expense/ExpenseTable";
 import Toast from "../components/common/Toast";
 import TravelModal from "../components/travel/TravelModal";
 import ExpenseEditModal from "../components/expense/ExpenseEditModal";
+import { useTripCrud } from "../hooks/useTripCrud";
 import { useExchangeRate } from "../hooks/useExchangeRate";
 
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -33,7 +34,7 @@ function mapTrip(row) {
   };
 }
 
-export default function TravelPage({ currentPage, onNavigate }) {
+export default function TravelPage() {
   const [entries, setEntries] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
@@ -51,8 +52,34 @@ export default function TravelPage({ currentPage, onNavigate }) {
   const [selectedTripId, setSelectedTripId] = useState(
     () => localStorage.getItem("selectedTripId") ?? ""
   );
-  const [showAddTrip, setShowAddTrip] = useState(false);
-  const [editingTripId, setEditingTripId] = useState(null); // null = 추가, id = 수정
+
+  const { showModal: showAddTrip, editingTripId, openAdd: openAddTrip, openEdit: openEditTripById,
+    closeModal: closeTrip, handleSaveTrip, handleDeleteTrip: handleDeleteTripBase,
+  } = useTripCrud({
+    showToast,
+    onInsert: (data) => {
+      setSelectedTripId(data.id);
+      setFilterLoc(data.location);
+      setForm((f) => ({ ...f, tripId: data.id }));
+      localStorage.setItem("selectedTripId", data.id);
+    },
+    onUpdate: (tripId, formData) => {
+      if (selectedTripId === tripId) setFilterLoc(formData.location);
+    },
+    onDelete: (tripId) => {
+      if (selectedTripId === tripId) {
+        localStorage.removeItem("selectedTripId");
+        setSelectedTripId("");
+        setFilterLoc("");
+        setForm((f) => ({ ...f, tripId: "" }));
+      }
+    },
+  });
+
+  function openEditTrip() {
+    if (selectedTrip) openEditTripById(selectedTrip.id);
+  }
+  function handleDeleteTrip(tripId) { return handleDeleteTripBase(tripId, trips); }
 
   // ── 항목 수정 ──────────────────────────────────────────────────────────────
   const [editingEntry, setEditingEntry] = useState(null); // null = 닫힘, object = 수정 대상
@@ -268,77 +295,6 @@ export default function TravelPage({ currentPage, onNavigate }) {
     e.target.value = "";
   }
 
-  // ── 여행 추가/수정 모달 열기 ──────────────────────────────────────────────
-  function openAddTrip() {
-    setEditingTripId(null);
-    setShowAddTrip(true);
-  }
-
-  function openEditTrip() {
-    if (!selectedTrip) return;
-    setEditingTripId(selectedTrip.id);
-    setShowAddTrip(true);
-  }
-
-  // ── 여행 저장 (추가 or 수정) ──────────────────────────────────────────────
-  async function handleSaveTrip(tripId, formData) {
-    const loc = formData.location.trim();
-    if (!loc || !supabase) return;
-
-    if (tripId) {
-      // 수정
-      const { error } = await supabase.from("trips").update({
-        location: loc,
-        start_date: formData.startDate || null,
-        end_date: formData.endDate || null,
-        companions: formData.companions.trim() || null,
-      }).eq("id", tripId);
-      if (error) { showToast("여행 수정 실패: " + error.message); return; }
-      // 현재 선택된 여행이 수정된 경우 필터 동기화
-      if (selectedTripId === tripId) {
-        setFilterLoc(loc);
-      }
-      showToast("여행이 수정됐습니다");
-    } else {
-      // 추가
-      const { data, error } = await supabase.from("trips").insert({
-        location: loc,
-        start_date: formData.startDate || null,
-        end_date: formData.endDate || null,
-        companions: formData.companions.trim() || null,
-      }).select().single();
-      if (error) { showToast("여행 추가 실패: " + error.message); return; }
-      setSelectedTripId(data.id);
-      setFilterLoc(loc);
-      setForm((f) => ({ ...f, tripId: data.id }));
-      showToast("여행이 추가됐습니다");
-    }
-
-    setEditingTripId(null);
-    setShowAddTrip(false);
-  }
-
-  // ── 여행 삭제 ─────────────────────────────────────────────────────────────
-  async function handleDeleteTrip(tripId) {
-    const trip = trips.find((t) => t.id === tripId);
-    if (!trip || !supabase) return;
-    if (!confirm(`"${trip.location}" 여행을 삭제할까요?`)) return;
-    const { error } = await supabase.from("trips").delete().eq("id", tripId);
-    if (error) { showToast("여행 삭제 실패: " + error.message); return; }
-    if (selectedTripId === tripId) {
-      localStorage.removeItem("selectedTripId");
-      setSelectedTripId("");
-      setFilterLoc("");
-      setForm((f) => ({ ...f, tripId: "" }));
-    }
-    showToast("여행이 삭제됐습니다");
-    setShowAddTrip(false);
-  }
-
-  function closeTrip() {
-    setShowAddTrip(false);
-    setEditingTripId(null);
-  }
 
   function handleSelectTrip(id) {
     setSelectedTripId(id);
@@ -367,7 +323,7 @@ export default function TravelPage({ currentPage, onNavigate }) {
   return (
     <>
       <div className="wrap expense-page">
-        <Header currentPage={currentPage} onNavigate={onNavigate} />
+        <Header />
 
         <main className="main">
           {/* 페이지 상단 */}
@@ -376,6 +332,14 @@ export default function TravelPage({ currentPage, onNavigate }) {
               <span className="page-top__title">지출내역</span>
             </div>
             <div className="page-top__actions">
+              <button className="btn btn--primary page-top__btn" onClick={openAddTrip}>
+                <i className="ni-add" /> 여행 추가
+              </button>
+              {selectedTrip && (
+                <button className="btn page-top__btn" onClick={openEditTrip}>
+                  <i className="ni-write" /> 여행 수정
+                </button>
+              )}
               <button onClick={handleExport} className="btn page-top__btn">
                 <i className="ni-download" /> 내보내기
               </button>
@@ -418,21 +382,6 @@ export default function TravelPage({ currentPage, onNavigate }) {
                       );
                     })}
                   </select>
-                  {selectedTrip && (
-                    <button
-                      className="btn btn--edit travel-info__edit-btn"
-                      onClick={openEditTrip}
-                      title="여행 수정"
-                    >
-                      <i className="ni-write" /> 여행 수정
-                    </button>
-                  )}
-                  <button
-                    className="btn btn--primary travel-info__add-btn"
-                    onClick={openAddTrip}
-                  >
-                    <i className="ni-add" /> 여행 추가
-                  </button>
                 </div>
 
                 <SummaryGrid entries={filtered} trip={selectedTrip} />

@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../utils/supabase";
 import Header from "../components/layout/Header";
+import TravelModal from "../components/travel/TravelModal";
+import Toast from "../components/common/Toast";
+import { useTripCrud } from "../hooks/useTripCrud";
 
 const SYMBOL = { JPY: "¥", KRW: "₩", USD: "$", EUR: "€", VND: "₫" };
 
@@ -21,23 +25,56 @@ function mapTrip(row) {
   };
 }
 
-export default function MainPage({ currentPage, onNavigate }) {
+export default function MainPage() {
+  const navigate = useNavigate();
   const [trips, setTrips] = useState([]);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState("");
+
+  function showToast(msg) {
+    setToast(msg);
+    setTimeout(() => setToast(""), 2200);
+  }
 
   const fetchAll = useCallback(async () => {
-    if (!supabase) { setLoading(false); return; }
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
     const [{ data: tripData }, { data: expData }] = await Promise.all([
-      supabase.from("trips").select("*").order("created_at", { ascending: true }),
+      supabase
+        .from("trips")
+        .select("*")
+        .order("created_at", { ascending: true }),
       supabase.from("expenses").select("id, trip_id, currency, amount"),
     ]);
     if (tripData) setTrips(tripData.map(mapTrip));
-    if (expData)  setEntries(expData);
+    if (expData) setEntries(expData);
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  const {
+    showModal,
+    editingTripId,
+    openAdd,
+    closeModal,
+    handleSaveTrip,
+    handleDeleteTrip: handleDeleteTripBase,
+  } = useTripCrud({
+    showToast,
+    onInsert: fetchAll,
+    onUpdate: fetchAll,
+    onDelete: fetchAll,
+  });
+
+  function handleDeleteTrip(tripId) {
+    return handleDeleteTripBase(tripId, trips);
+  }
 
   // 여행별 지출 집계
   function getTripStats(tripId) {
@@ -51,10 +88,10 @@ export default function MainPage({ currentPage, onNavigate }) {
     return { count: exps.length, totals };
   }
 
-  // 여행 선택 → 지출 내역 페이지로 이동
+  // 여행 선택 → 해당 페이지로 이동
   function handleSelectTrip(tripId, page = "expense") {
     if (tripId) localStorage.setItem("selectedTripId", tripId);
-    onNavigate(page);
+    navigate(page === "expense" ? "/expense" : "/info");
   }
 
   // 여행 기간 (박 수)
@@ -66,20 +103,26 @@ export default function MainPage({ currentPage, onNavigate }) {
 
   return (
     <div className="wrap main-page">
-      <Header currentPage={currentPage} onNavigate={onNavigate} />
+      <Header />
 
       <main className="main">
         <div className="page-top">
           <div className="page-top__title-nav">
             <span className="page-top__title">여행</span>
           </div>
+          <div className="page-top__actions">
+            <button
+              className="btn btn--primary page-top__btn"
+              onClick={openAdd}
+            >
+              <i className="ni-add" /> 여행 추가
+            </button>
+          </div>
         </div>
 
         <div className="page-container">
           <section className="trip-summary-section">
-            {loading && (
-              <p className="trip-summary__empty">불러오는 중...</p>
-            )}
+            {loading && <p className="trip-summary__empty">불러오는 중...</p>}
 
             {!loading && trips.length === 0 && (
               <p className="trip-summary__empty">등록된 여행이 없습니다</p>
@@ -90,26 +133,30 @@ export default function MainPage({ currentPage, onNavigate }) {
                 {trips.map((trip) => {
                   const { count, totals } = getTripStats(trip.id);
                   const start = fmtDate(trip.startDate);
-                  const end   = fmtDate(trip.endDate);
-                  const n     = nights(trip.startDate, trip.endDate);
+                  const end = fmtDate(trip.endDate);
+                  const n = nights(trip.startDate, trip.endDate);
                   const sortedCurrencies = Object.entries(totals).sort(
-                    (a, b) => b[1] - a[1]
+                    (a, b) => b[1] - a[1],
                   );
 
                   return (
                     <div key={trip.id} className="trip-card">
                       {/* 상단 */}
                       <div className="trip-card__top">
-                        <span className="trip-card__location">{trip.location}</span>
+                        <span className="trip-card__location">
+                          {trip.location}
+                        </span>
                         {n != null && (
-                          <span className="trip-card__nights">{n}박 {n + 1}일</span>
+                          <span className="trip-card__nights">
+                            {n}박 {n + 1}일
+                          </span>
                         )}
                       </div>
 
                       {/* 기간 */}
                       {(start || end) && (
                         <p className="trip-card__period">
-                          {start && end ? `${start} ~ ${end}` : start ?? end}
+                          {start && end ? `${start} ~ ${end}` : (start ?? end)}
                         </p>
                       )}
 
@@ -129,7 +176,9 @@ export default function MainPage({ currentPage, onNavigate }) {
                             </span>
                           ))
                         ) : (
-                          <span className="trip-card__amount --empty">지출 없음</span>
+                          <span className="trip-card__amount --empty">
+                            지출 없음
+                          </span>
                         )}
                         <span className="trip-card__count">{count}건</span>
                       </div>
@@ -140,7 +189,7 @@ export default function MainPage({ currentPage, onNavigate }) {
                           className="btn btn--sm"
                           onClick={() => handleSelectTrip(trip.id, "info")}
                         >
-                          여행 정보
+                          나의 여행
                         </button>
                         <button
                           className="btn btn--primary btn--sm"
@@ -157,6 +206,17 @@ export default function MainPage({ currentPage, onNavigate }) {
           </section>
         </div>
       </main>
+
+      <Toast message={toast} />
+      {showModal && (
+        <TravelModal
+          trips={trips}
+          initialTripId={editingTripId}
+          onSave={handleSaveTrip}
+          onDelete={handleDeleteTrip}
+          onClose={closeModal}
+        />
+      )}
     </div>
   );
 }

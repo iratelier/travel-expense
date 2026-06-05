@@ -155,7 +155,7 @@ export default function TravelModal({
             <input
               type="text"
               className={`form--field${errors.location ? " border-red-400" : ""}`}
-              placeholder="여행지 입력"
+              placeholder="여행지"
               value={form.location}
               onChange={set("location")}
             />
@@ -208,7 +208,7 @@ export default function TravelModal({
             <input
               type="text"
               className="form--field"
-              placeholder="동행자 이름 (예: 지수, 민준)"
+              placeholder="동행자 "
               value={form.companions}
               onChange={set("companions")}
             />
