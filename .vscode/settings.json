@@ -34,7 +34,7 @@
     "**/.svn": true,
     "**/.hg": true,
     "**/.DS_Store": true,
-    "**/Thumbs.db": true,
+    "**/Thumbs.db": false,
     "**/CVS": false
   },
   "explorerExclude.backup": {}
